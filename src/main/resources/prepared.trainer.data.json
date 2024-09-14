@@ -1,0 +1,10 @@
+{
+  "100": {
+    "userId": 100,
+    "firstName": "Test",
+    "lastName": "Trainer",
+    "username": "Test.Trainer",
+    "password": "password123",
+    "active": true
+  }
+}

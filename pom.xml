@@ -6,7 +6,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.3.3</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
     <groupId>com.epam.task</groupId>
     <artifactId>gym-system</artifactId>
@@ -28,6 +28,9 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <jacoco.version>0.8.12</jacoco.version>
+        <junit.jupiter.version>5.10.3</junit.jupiter.version>
+        <jackson.version>2.13.4.1</jackson.version>
     </properties>
     <dependencies>
         <dependency>
@@ -41,21 +44,22 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- JUnit Jupiter (JUnit 5) -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.10.3</version>
+            <version>${junit.jupiter.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
-        <!-- JUnit Platform Suite API for creating test suites -->
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-suite-api</artifactId>
-            <version>1.10.3</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -67,7 +71,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.12</version> <!-- Replace with the latest version -->
+                <version>${jacoco.version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -80,6 +84,27 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>verify</phase>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>CLASS</element>
+                                    <counter>LINE</counter>
+                                    <threshold>0.80</threshold>
+                                </rule>
+                                <rule>
+                                    <element>CLASS</element>
+                                    <counter>BRANCH</counter>
+                                    <threshold>0.80</threshold>
+                                </rule>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -1,64 +1,63 @@
 package com.epam.task.gymsystem;
 
 import com.epam.task.gymsystem.domain.Trainee;
-import com.epam.task.gymsystem.service.TraineeService;
+import com.epam.task.gymsystem.service.TraineeServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Date;
-
+import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class TraineeServiceTest {
-
     @Autowired
-    private TraineeService service;
+    private TraineeServiceImpl service;
 
     @Test
-    void testCreate() {
-        ZonedDateTime dateTime = ZonedDateTime.of(1980, 4, 10, 0, 0, 0, 0, ZoneId.systemDefault());
-        Trainee expected = new Trainee("Bob", "Robinson", Date.from(dateTime.toInstant()), "Newline Avenue, New York", 1L);
-        expected.setUsername("Bob.Robinson");
-        service.create(new Trainee("Bob", "Robinson", Date.from(dateTime.toInstant()), "Newline Avenue, New York", 1L));
-        Trainee actual = service.select(1L);
-        assertEquals(expected.getFirstName(), actual.getFirstName());
-        assertEquals(expected.getLastName(), actual.getLastName());
-        assertEquals(expected.getUsername(), actual.getUsername());
-        assertEquals(expected.isActive(), actual.isActive());
-        assertEquals(expected.getDateOfBirth(), actual.getDateOfBirth());
-        assertEquals(expected.getAddress(), actual.getAddress());
-        assertEquals(expected.getUserId(), actual.getUserId());
+    void createAndSelectTrainee() {
+        Trainee trainee = Trainee.builder()
+                .userId(1L)
+                .firstName("John")
+                .lastName("Doe")
+                .username("John.Doe")
+                .build();
+        service.create(trainee);
+        assertTrue(service.select(1L).isPresent());
+        assertEquals(trainee, service.select(1L).get());
     }
 
     @Test
-    void testUpdate() {
-        ZonedDateTime dateTime = ZonedDateTime.of(1979, 6, 11, 0, 0, 0, 0, ZoneId.systemDefault());
-        Trainee expected = new Trainee("Kyle", "Smith", Date.from(dateTime.toInstant()), "Old Town, Rome", 2L);
-        expected.setUsername("Kyle.Smith");
-        service.create(new Trainee("Kyle", "Robinson", Date.from(dateTime.toInstant()), "Newline Avenue, New York", 2L));
-        service.update(2L, new Trainee(null, "Smith", null, "Old Town, Rome", null));
-        Trainee actual = service.select(2L);
-        assertEquals(expected.getFirstName(), actual.getFirstName());
-        assertEquals(expected.getLastName(), actual.getLastName());
-        assertEquals(expected.getUsername(), actual.getUsername());
-        assertEquals(expected.isActive(), actual.isActive());
-        assertEquals(expected.getDateOfBirth(), actual.getDateOfBirth());
-        assertEquals(expected.getAddress(), actual.getAddress());
-        assertEquals(expected.getUserId(), actual.getUserId());
+    void selectNonExistentTrainee() {
+        assertFalse(service.select(999L).isPresent());
     }
 
     @Test
-    void testDelete() {
-        ZonedDateTime dateTime = ZonedDateTime.of(1979, 6, 11, 0, 0, 0, 0, ZoneId.systemDefault());
-        service.create(new Trainee("Ben", "Stilton", Date.from(dateTime.toInstant()), "Reading, London", 3L));
-        assertNotNull(service.select(3L));
+    void updateTrainee() {
+        Trainee trainee = Trainee.builder()
+                .userId(2L)
+                .firstName("John")
+                .lastName("Doe")
+                .username("John.Doe")
+                .address("1234 Elm St")
+                .dateOfBirth(LocalDateTime.of(1990, 1, 1, 0, 0))
+                .build();
+        service.create(trainee);
+        trainee.setFirstName("Jane");
+        service.update(2L, trainee);
+        assertEquals("Jane", service.select(2L).get().getFirstName());
+        assertEquals(trainee, service.select(2L).get());
+    }
+
+    @Test
+    void deleteTrainee() {
+        Trainee trainee = Trainee.builder()
+                .userId(3L)
+                .firstName("John")
+                .lastName("Doe")
+                .username("John.Doe")
+                .build();
+        service.create(trainee);
         service.delete(3L);
-        assertNull(service.select(3L));
+        assertFalse(service.select(3L).isPresent());
     }
-
-
 }

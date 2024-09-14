@@ -1,29 +1,14 @@
 package com.epam.task.gymsystem.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class TrainingType {
-
     private String name;
-
-    public TrainingType(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-
-        TrainingType type = (TrainingType) obj;
-        return name.equals(type.getName());
-    }
-
 }

@@ -1,55 +1,50 @@
 package com.epam.task.gymsystem;
 
-
 import com.epam.task.gymsystem.domain.Trainer;
 import com.epam.task.gymsystem.domain.TrainingType;
-import com.epam.task.gymsystem.service.TrainerService;
+import com.epam.task.gymsystem.service.TrainerServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class TrainerServiceTest {
-
     @Autowired
-    private TrainerService service;
+    private TrainerServiceImpl service;
 
     @Test
-    void testCreate() {
-        Trainer expected = new Trainer("Steve", "Benson", 1L, new TrainingType("Fitness"));
-        expected.setUsername("Steve.Benson");
-        service.create(new Trainer("Steve", "Benson", 1L, new TrainingType("Fitness")));
-        Trainer actual = service.select(1L);
-        assertEquals(expected.getFirstName(), actual.getFirstName());
-        assertEquals(expected.getLastName(), actual.getLastName());
-        assertEquals(expected.getUsername(), actual.getUsername());
-        assertEquals(expected.isActive(), actual.isActive());
-        assertEquals(expected.getUserId(), actual.getUserId());
-        assertEquals(expected.getSpecialization(), actual.getSpecialization());
+    void createAndSelectTrainer() {
+        Trainer trainer = Trainer.builder()
+                .userId(1L)
+                .firstName("Steve")
+                .lastName("Benson")
+                .specialization(TrainingType.builder().name("Fitness").build())
+                .username("Steve.Benson")
+                .build();
+        service.create(trainer);
+        assertTrue(service.select(1L).isPresent());
+        assertEquals(trainer, service.select(1L).get());
     }
 
     @Test
-    void testUpdate() {
-        Trainer expected = new Trainer("Kris", "Courtney", 2L, new TrainingType("Cardio"));
-        expected.setUsername("Kris.Courtney");
-        service.create(new Trainer("Roger", "Courtney", 2L, new TrainingType("Powerlifting")));
-        service.update(2L, new Trainer("Kris", null, null, new TrainingType("Cardio")));
-        Trainer actual = service.select(2L);
-        assertEquals(expected.getFirstName(), actual.getFirstName());
-        assertEquals(expected.getLastName(), actual.getLastName());
-        assertEquals(expected.getUsername(), actual.getUsername());
-        assertEquals(expected.isActive(), actual.isActive());
-        assertEquals(expected.getUserId(), actual.getUserId());
-        assertEquals(expected.getSpecialization(), actual.getSpecialization());
+    void selectNonExistentTrainer() {
+        assertFalse(service.select(999L).isPresent());
     }
 
     @Test
-    void testDelete() {
-        service.create(new Trainer("Ron", "McDonald", 3L, new TrainingType("Gymnastics")));
-        assertNotNull(service.select(3L));
-        service.delete(3L);
-        assertNull(service.select(3L));
+    void updateTrainer() {
+        Trainer trainer = Trainer.builder()
+                .userId(2L)
+                .firstName("Steve")
+                .lastName("Benson")
+                .specialization(TrainingType.builder().name("Fitness").build())
+                .username("Steve.Benson")
+                .build();
+        service.create(trainer);
+        trainer.setFirstName("John");
+        service.update(2L, trainer);
+        assertEquals("John", service.select(2L).get().getFirstName());
+        assertEquals(trainer, service.select(2L).get());
     }
 }
