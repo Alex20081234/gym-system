@@ -1,0 +1,1 @@
+This is a gym system application made by Oleksandr Raskosov. It will provide a wide range of functionality such as creating and editing new trainers, trainees, trainings and manage your experience. 
