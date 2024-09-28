@@ -1,72 +1,78 @@
 package com.epam.task.gymsystem.service;
 
-import com.epam.task.gymsystem.dao.TraineeDao;
+import com.epam.task.gymsystem.common.ActivityStatusAlreadyExistsException;
+import com.epam.task.gymsystem.common.NoExpectedDataInDatabaseException;
+import com.epam.task.gymsystem.common.UserNotFoundException;
+import com.epam.task.gymsystem.common.UserUtils;
+import com.epam.task.gymsystem.dao.TraineeDaoImpl;
 import com.epam.task.gymsystem.domain.Trainee;
+import com.epam.task.gymsystem.domain.Trainer;
+import com.epam.task.gymsystem.domain.Training;
+import com.epam.task.gymsystem.domain.TrainingType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class TraineeServiceImpl implements TraineeService {
-    private final TraineeDao dao;
+    private final TraineeDaoImpl dao;
 
     @Autowired
-    public TraineeServiceImpl(TraineeDao dao) {
+    public TraineeServiceImpl(TraineeDaoImpl dao) {
         this.dao = dao;
     }
 
     @Override
-    public void create(Trainee trainee) {
-        UserService.setUsernameAndPassword(trainee, selectAll().get());
-        dao.create(trainee);
+    public List<Trainer> selectNotAssignedTrainers(String username) throws UserNotFoundException, NoExpectedDataInDatabaseException {
+        return dao.selectNotAssignedTrainers(username);
     }
 
     @Override
-    public void update(Long userId, Trainee changes) {
-        Optional<Trainee> trainee = dao.select(userId);
-        boolean nameChanged = false;
-        if (changes.getUserId() != null) {
-            trainee.get().setUserId(changes.getUserId());
-        }
-        if (changes.getAddress() != null) {
-            trainee.get().setAddress(changes.getAddress());
-        }
-        if (changes.getDateOfBirth() != null) {
-            trainee.get().setDateOfBirth(changes.getDateOfBirth());
-        }
-        if (changes.getFirstName() != null) {
-            trainee.get().setFirstName(changes.getFirstName());
-            nameChanged = true;
-        }
-        if (changes.getLastName() != null) {
-            trainee.get().setLastName(changes.getLastName());
-            nameChanged = true;
-        }
-        if (nameChanged) {
-            trainee.get().setUsername(UserService.generateUsername(trainee.get().getFirstName(), trainee.get().getLastName(), selectAll().get()));
-        }
-        if (changes.getPassword() != null) {
-            trainee.get().setPassword(changes.getPassword());
-        }
-        trainee.get().setActive(changes.isActive());
-        dao.update(trainee.get());
+    public void updateTrainers(String username, Map<String, Boolean> trainerUsernames) throws UserNotFoundException {
+        dao.updateTrainers(username, trainerUsernames);
     }
 
     @Override
-    public void delete(Long userId) {
-        Optional<Trainee> trainee = dao.select(userId);
-        trainee.get().setActive(false);
-        dao.delete(userId);
+    public void delete(String username) throws UserNotFoundException {
+        dao.delete(username);
     }
 
     @Override
-    public Optional<Trainee> select(Long userId) {
-        return dao.select(userId);
+    public void create(Trainee user) {
+        UserUtils.setUsernameAndPassword(user);
+        dao.create(user);
     }
 
     @Override
-    public Optional<Map<Long, Trainee>> selectAll() {
+    public void changePassword(String username, String newPassword) throws UserNotFoundException {
+        dao.changePassword(username, newPassword);
+    }
+
+    @Override
+    public void update(String username, Trainee updates) throws UserNotFoundException {
+        Trainee trainee = select(username);
+        dao.update(username, (Trainee) UserUtils.mergeUsers(trainee, updates));
+    }
+
+    @Override
+    public void changeActivityStatus(String username, boolean newActivityStatus) throws UserNotFoundException, ActivityStatusAlreadyExistsException {
+        dao.changeActivityStatus(username, newActivityStatus);
+    }
+
+    @Override
+    public List<Training> selectTrainings(String username, LocalDate fromDate, LocalDate toDate, String partnerUsername, TrainingType trainingType) throws UserNotFoundException {
+        return dao.selectTrainings(username, fromDate, toDate, partnerUsername, trainingType);
+    }
+
+    @Override
+    public Trainee select(String username) throws UserNotFoundException {
+        return dao.select(username);
+    }
+
+    @Override
+    public List<Trainee> selectAll() throws NoExpectedDataInDatabaseException {
         return dao.selectAll();
     }
 }

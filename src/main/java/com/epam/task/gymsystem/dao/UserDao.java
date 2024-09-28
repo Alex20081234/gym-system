@@ -1,4 +1,4 @@
-package com.epam.task.gymsystem.service;
+package com.epam.task.gymsystem.dao;
 
 import com.epam.task.gymsystem.common.ActivityStatusAlreadyExistsException;
 import com.epam.task.gymsystem.common.NoExpectedDataInDatabaseException;
@@ -9,10 +9,10 @@ import com.epam.task.gymsystem.domain.User;
 import java.time.LocalDate;
 import java.util.List;
 
-public interface UserService<T extends User> {
+public interface UserDao<T extends User> {
     void create(T user);
     void changePassword(String username, String newPassword) throws UserNotFoundException;
-    void update(String username, T updates) throws UserNotFoundException;
+    void update(String username, T updated) throws UserNotFoundException;
     void changeActivityStatus(String username, boolean newActivityStatus) throws UserNotFoundException, ActivityStatusAlreadyExistsException;
     List<Training> selectTrainings(String username,
                                    LocalDate fromDate,

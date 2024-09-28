@@ -1,9 +1,13 @@
 package com.epam.task.gymsystem.service;
 
+import com.epam.task.gymsystem.common.NoExpectedDataInDatabaseException;
+import com.epam.task.gymsystem.common.TrainingNotFoundException;
+import com.epam.task.gymsystem.common.UserNotFoundException;
 import com.epam.task.gymsystem.domain.Training;
-import java.util.Optional;
+import java.util.List;
 
 public interface TrainingService {
-    void create(Training training);
-    Optional<Training> select(Long id);
+    void create(Training training) throws UserNotFoundException;
+    Training select(int id) throws TrainingNotFoundException;
+    List<Training> selectAll() throws NoExpectedDataInDatabaseException;
 }
