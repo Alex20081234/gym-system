@@ -1,46 +1,33 @@
 package com.epam.task.gymsystem.common;
 
-import com.epam.task.gymsystem.configuration.GymSystemConfiguration;
 import com.epam.task.gymsystem.domain.Trainee;
 import com.epam.task.gymsystem.domain.Trainer;
 import com.epam.task.gymsystem.domain.User;
-import org.hibernate.HibernateException;
-import org.hibernate.SessionFactory;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Random;
 
+@Component
 public class UserUtils {
-    private static final Random RANDOM = new AnnotationConfigApplicationContext(GymSystemConfiguration.class).getBean(Random.class);
-    private static final int PASSWORD_LENGTH = 10;
-    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private static final SessionFactory SESSION_FACTORY = new AnnotationConfigApplicationContext(GymSystemConfiguration.class).getBean(SessionFactory.class);
+    private final Random random = new Random();
 
-    private UserUtils() {}
-
-    public static void setUsernameAndPassword(User user) {
-        user.setUsername(generateUsername(user.getFirstName(), user.getLastName()));
+    public void setUsernameAndPassword(User user, List<String> userNames) {
+        user.setUsername(generateUsername(user.getFirstName(), user.getLastName(), userNames));
         user.setPassword(generatePassword());
     }
 
-    private static String generatePassword() {
-        StringBuilder password = new StringBuilder(PASSWORD_LENGTH);
-        for (int i = 0; i < PASSWORD_LENGTH; i++) {
-            int index = RANDOM.nextInt(CHARACTERS.length());
-            password.append(CHARACTERS.charAt(index));
+    private String generatePassword() {
+        int passwordLength = 10;
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder password = new StringBuilder(passwordLength);
+        for (int i = 0; i < passwordLength; i++) {
+            int index = random.nextInt(characters.length());
+            password.append(characters.charAt(index));
         }
         return password.toString();
     }
 
-    public static String generateUsername(String firstName, String lastName) {
-        List<String> userNames;
-        try {
-            SESSION_FACTORY.getCurrentSession().beginTransaction();
-            userNames = SESSION_FACTORY.getCurrentSession().createQuery("SELECT username FROM User", String.class).list();
-            SESSION_FACTORY.getCurrentSession().getTransaction().commit();
-        } catch (HibernateException e) {
-            throw new RuntimeException(e);
-        }
+    public String generateUsername(String firstName, String lastName, List<String> userNames) {
         StringBuilder username = new StringBuilder(firstName + "." + lastName);
         int counter = 0;
         while (exists(username.toString(), userNames)) {
@@ -55,7 +42,7 @@ public class UserUtils {
         return username.toString();
     }
 
-    private static boolean exists(String username, List<String> userNames) {
+    private boolean exists(String username, List<String> userNames) {
         for (String currentUsername : userNames) {
             if (currentUsername != null && currentUsername.equals(username)) {
                 return true;
@@ -64,7 +51,7 @@ public class UserUtils {
         return false;
     }
 
-    public static User mergeUsers(User initial, User updates) {
+    public User mergeUsers(User initial, User updates, List<String> userNames) {
         if (updates == null) {
             return initial;
         }
@@ -72,9 +59,6 @@ public class UserUtils {
             return updates;
         }
         boolean nameWasChanged = false;
-        if (updates.getId() != 0) {
-            initial.setId(updates.getId());
-        }
         if (updates.getFirstName() != null) {
             initial.setFirstName(updates.getFirstName());
             nameWasChanged = true;
@@ -84,7 +68,7 @@ public class UserUtils {
             nameWasChanged = true;
         }
         if (nameWasChanged) {
-            initial.setUsername(generateUsername(initial.getFirstName(), initial.getLastName()));
+            initial.setUsername(generateUsername(initial.getFirstName(), initial.getLastName(), userNames));
         }
         if (updates.getPassword() != null) {
             initial.setPassword(updates.getPassword());
@@ -99,6 +83,9 @@ public class UserUtils {
             if (((Trainer) updates).getSpecialization() != null) {
                 ((Trainer) initial).setSpecialization(((Trainer) updates).getSpecialization());
             }
+            if (((Trainer) updates).getTrainees() != null) {
+                ((Trainer) initial).setTrainees(((Trainer) updates).getTrainees());
+            }
         } else if (initial instanceof Trainee && updates instanceof Trainee) {
             if (((Trainee) updates).getAddress() != null) {
                 ((Trainee) initial).setAddress(((Trainee) updates).getAddress());
@@ -108,6 +95,9 @@ public class UserUtils {
             }
             if (((Trainee) updates).getTrainings() != null) {
                 ((Trainee) initial).setTrainings(((Trainee) updates).getTrainings());
+            }
+            if (((Trainee) updates).getTrainers() != null) {
+                ((Trainee) initial).setTrainers(((Trainee) updates).getTrainers());
             }
         }
         return initial;

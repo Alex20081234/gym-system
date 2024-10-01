@@ -1,12 +1,10 @@
 package com.epam.task.gymsystem;
 
-import com.epam.task.gymsystem.common.NoExpectedDataInDatabaseException;
-import com.epam.task.gymsystem.common.TrainingNotFoundException;
-import com.epam.task.gymsystem.common.UserNotFoundException;
 import com.epam.task.gymsystem.dao.TrainingDaoImpl;
 import com.epam.task.gymsystem.domain.Trainee;
 import com.epam.task.gymsystem.domain.Trainer;
 import com.epam.task.gymsystem.domain.Training;
+import com.epam.task.gymsystem.domain.TrainingType;
 import com.epam.task.gymsystem.service.TrainingServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,26 +55,31 @@ class TrainingServiceImplTest {
                 .trainingDate(LocalDate.now())
                 .trainingName("Test training")
                 .duration(60)
-                .trainingType(null)
+                .trainingType(new TrainingType())
                 .build();
     }
 
     @Test
-    void testCreate() throws UserNotFoundException {
+    void create() {
         doNothing().when(dao).create(any(Training.class));
         service.create(initial);
         verify(dao, times(1)).create(initial);
     }
 
     @Test
-    void testSelect() throws TrainingNotFoundException {
+    void createThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.create(null));
+    }
+
+    @Test
+    void select() {
         when(dao.select(1)).thenReturn(initial);
         Training actual = service.select(1);
         assertEquals(initial, actual);
     }
 
     @Test
-    void testSelectAll() throws NoExpectedDataInDatabaseException {
+    void selectAll() {
         when(dao.selectAll()).thenReturn(List.of(initial, new Training()));
         List<Training> trainings = service.selectAll();
         assertNotNull(trainings);

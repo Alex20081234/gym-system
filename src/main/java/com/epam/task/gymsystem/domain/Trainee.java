@@ -10,20 +10,20 @@ import java.util.Set;
 
 @SuperBuilder
 @Data
-@EqualsAndHashCode(callSuper = true, exclude = {"trainings", "trainers"})
-@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@ToString(callSuper = true, onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "Trainee")
 public class Trainee extends User {
-    @Column(name = "DateOfBirth")
+    @Column(name = "DateOfBirth", nullable = false)
     private LocalDate dateOfBirth;
-    @Column(name = "Address")
+    @Column(name = "Address", nullable = false)
     private String address;
-    @OneToMany(mappedBy = "trainee", cascade = CascadeType.REMOVE, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "trainee", cascade = CascadeType.REMOVE)
     private List<Training> trainings;
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(cascade = CascadeType.REMOVE)
     @JoinTable(
             name = "trainee_trainer",
             joinColumns = @JoinColumn(name = "trainee_id"),

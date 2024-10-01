@@ -9,18 +9,18 @@ import java.util.Set;
 
 @SuperBuilder
 @Data
-@EqualsAndHashCode(callSuper = true, exclude = {"trainings", "trainees"})
-@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@ToString(callSuper = true, onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "Trainer")
 public class Trainer extends User {
     @ManyToOne
-    @JoinColumn(name = "Specialization", referencedColumnName = "Id")
+    @JoinColumn(name = "Specialization", referencedColumnName = "Id", nullable = false)
     private TrainingType specialization;
-    @OneToMany(mappedBy = "trainer", cascade = CascadeType.REMOVE, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "trainer", cascade = CascadeType.REMOVE)
     private List<Training> trainings;
-    @ManyToMany(mappedBy = "trainers", fetch = FetchType.EAGER)
+    @ManyToMany(mappedBy = "trainers", cascade = CascadeType.REMOVE)
     private Set<Trainee> trainees = new HashSet<>();
 }

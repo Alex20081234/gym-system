@@ -1,24 +1,16 @@
 package com.epam.task.gymsystem.service;
 
-import com.epam.task.gymsystem.common.ActivityStatusAlreadyExistsException;
-import com.epam.task.gymsystem.common.NoExpectedDataInDatabaseException;
-import com.epam.task.gymsystem.common.UserNotFoundException;
 import com.epam.task.gymsystem.domain.Training;
-import com.epam.task.gymsystem.domain.TrainingType;
+import com.epam.task.gymsystem.domain.TrainingCriteria;
 import com.epam.task.gymsystem.domain.User;
-import java.time.LocalDate;
 import java.util.List;
 
 public interface UserService<T extends User> {
     void create(T user);
-    void changePassword(String username, String newPassword) throws UserNotFoundException;
-    void update(String username, T updates) throws UserNotFoundException;
-    void changeActivityStatus(String username, boolean newActivityStatus) throws UserNotFoundException, ActivityStatusAlreadyExistsException;
-    List<Training> selectTrainings(String username,
-                                   LocalDate fromDate,
-                                   LocalDate toDate,
-                                   String partnerUsername,
-                                   TrainingType trainingType) throws UserNotFoundException;
-    T select(String username) throws UserNotFoundException;
-    List<T> selectAll() throws NoExpectedDataInDatabaseException;
+    void changePassword(String username, String newPassword);
+    void update(String username, T updates);
+    void changeActivityStatus(String username, boolean newActivityStatus);
+    List<Training> selectTrainings(String username, TrainingCriteria criteria);
+    T select(String username);
+    List<T> selectAll();
 }

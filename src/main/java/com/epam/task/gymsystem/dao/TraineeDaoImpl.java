@@ -1,309 +1,149 @@
 package com.epam.task.gymsystem.dao;
 
-import com.epam.task.gymsystem.common.ActivityStatusAlreadyExistsException;
-import com.epam.task.gymsystem.common.NoExpectedDataInDatabaseException;
+import com.epam.task.gymsystem.common.Dao;
 import com.epam.task.gymsystem.common.UserNotFoundException;
-import com.epam.task.gymsystem.domain.Trainee;
-import com.epam.task.gymsystem.domain.Trainer;
-import com.epam.task.gymsystem.domain.Training;
-import com.epam.task.gymsystem.domain.TrainingType;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
+import com.epam.task.gymsystem.domain.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
-import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.*;
 
-@Repository
+@Dao
 public class TraineeDaoImpl implements TraineeDao {
     private static final Logger LOGGER = LoggerFactory.getLogger(TraineeDaoImpl.class);
-    private final SessionFactory sessionFactory;
-    private static final String NOT_FOUND_MESSAGE = "Trainee with username {} was not found";
-
-    @Autowired
-    public TraineeDaoImpl(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
-    }
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
+    @Transactional
     public void create(Trainee trainee) {
-        LOGGER.info("Creating trainee with username: {}", trainee.getUsername());
-        if (trainee.getUsername() == null) {
-            LOGGER.error("Trainee username is null");
-            throw new IllegalArgumentException("Trainee username is null");
-        }
-        Transaction transaction = null;
-        try (Session session = sessionFactory.getCurrentSession()) {
-            transaction = session.beginTransaction();
-            session.persist(trainee);
-            transaction.commit();
-            LOGGER.info("Trainee was successfully created");
-        } catch (HibernateException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            LOGGER.error("Failed to create trainee: {}", e.getMessage());
-            throw e;
-        } finally {
-            sessionFactory.getCurrentSession().close();
-        }
+        entityManager.persist(trainee);
+        LOGGER.info("Trainee {} was successfully created", trainee);
     }
 
     @Override
-    public void changePassword(String username, String newPassword) throws UserNotFoundException {
-        LOGGER.info("Changing password for trainee with username: {}", username);
-        if (newPassword == null || newPassword.isEmpty()) {
-            LOGGER.error("New password is null or empty");
-            throw new IllegalArgumentException("New password is null or empty");
-        }
-        Trainee trainee = select(username);
-        Transaction transaction = null;
-        try (Session session = sessionFactory.getCurrentSession()) {
-            transaction = session.beginTransaction();
-            trainee.setPassword(newPassword);
-            session.merge(trainee);
-            transaction.commit();
-        } catch (HibernateException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            LOGGER.error("Failed to change password: {}", e.getMessage());
-            throw e;
-        } finally {
-            sessionFactory.getCurrentSession().close();
-        }
-        LOGGER.info("Password was successfully changed");
+    @Transactional
+    public void changePassword(Trainee trainee, String newPassword) {
+        trainee.setPassword(newPassword);
+        entityManager.merge(trainee);
+        LOGGER.info("Trainee {}'s password was successfully changed", trainee.getUsername());
     }
 
     @Override
-    public void update(String username, Trainee updated) throws UserNotFoundException {
-        LOGGER.info("Updating trainee with username: {}", username);
-        if (updated.getUsername() == null) {
-            LOGGER.error("Trainee username is null");
-            throw new IllegalArgumentException("Trainee username is null");
-        }
-        Trainee trainee = select(username);
-        Transaction transaction = null;
-        try (Session session = sessionFactory.getCurrentSession()) {
-            transaction = session.beginTransaction();
-            updated.setId(trainee.getId());
-            session.merge(updated);
-            transaction.commit();
-        } catch (HibernateException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            LOGGER.error("Failed to update trainee: {}", e.getMessage());
-            throw e;
-        } finally {
-            sessionFactory.getCurrentSession().close();
-        }
-        LOGGER.info("Trainee was successfully updated");
+    @Transactional
+    public void update(Trainee trainee, Trainee updated) {
+        updated.setId(trainee.getId());
+        entityManager.merge(updated);
+        LOGGER.info("Trainee {} was successfully updated", trainee.getUsername());
     }
 
     @Override
-    public void changeActivityStatus(String username, boolean newActivityStatus) throws UserNotFoundException, ActivityStatusAlreadyExistsException {
-        LOGGER.info("Changing activity status for trainee with username: {}", username);
-        Trainee trainee = select(username);
-        if (trainee.getIsActive() == newActivityStatus) {
-            LOGGER.error("Trainee with username {} already has activity status {}", username, newActivityStatus);
-            throw new ActivityStatusAlreadyExistsException("Trainee with username " + username + " already has activity status " + newActivityStatus);
-        }
-        Transaction transaction = null;
-        try (Session session = sessionFactory.getCurrentSession()) {
-            transaction = session.beginTransaction();
-            trainee.setIsActive(newActivityStatus);
-            session.merge(trainee);
-            transaction.commit();
-        } catch (HibernateException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            LOGGER.error("Failed to change activity status: {}", e.getMessage());
-            throw e;
-        } finally {
-            sessionFactory.getCurrentSession().close();
-        }
-        LOGGER.info("Activity status was successfully changed");
+    @Transactional
+    public void changeActivityStatus(Trainee trainee, boolean newActivityStatus) {
+        trainee.setIsActive(newActivityStatus);
+        entityManager.merge(trainee);
+        LOGGER.info("Trainee {}'s activity status was successfully changed", trainee.getUsername());
     }
 
     @Override
-    public List<Training> selectTrainings(String username, LocalDate fromDate, LocalDate toDate, String trainerUsername,
-                                          TrainingType trainingType) throws UserNotFoundException {
-        LOGGER.info("Selecting trainings with some criteria for trainee with username: {}", username);
-        List<Training> selectedTrainings;
-        Trainee trainee = select(username);
-        selectedTrainings = trainee.getTrainings().stream().filter(training -> {
-            if (fromDate != null && training.getTrainingDate().isBefore(fromDate)) {
+    public List<Training> selectTrainings(Trainee trainee, TrainingCriteria criteria) {
+        LOGGER.info("Successfully selected trainings for trainee {}", trainee.getUsername());
+        entityManager.refresh(trainee);
+        if (criteria == null) {
+            return trainee.getTrainings();
+        }
+        return trainee.getTrainings().stream().filter(training -> {
+            if (criteria.getFromDate() != null && training.getTrainingDate().isBefore(criteria.getFromDate())) {
                 return false;
             }
-            if (toDate != null && training.getTrainingDate().isAfter(toDate)) {
+            if (criteria.getToDate() != null && training.getTrainingDate().isAfter(criteria.getToDate())) {
                 return false;
             }
-            if (trainerUsername != null && !training.getTrainer().getUsername().equals(trainerUsername)) {
+            if (criteria.getPartnerUsername() != null && !training.getTrainer().getUsername().equals(criteria.getPartnerUsername())) {
                 return false;
             }
-            return trainingType == null || training.getTrainingType().equals(trainingType);
+            return criteria.getTrainingType() == null || training.getTrainingType().equals(criteria.getTrainingType());
         }).toList();
-        LOGGER.info("Successfully selected trainings for trainee with username: {}", username);
-        return selectedTrainings;
     }
 
     @Override
-    public List<Trainer> selectNotAssignedTrainers(String username) throws NoExpectedDataInDatabaseException, UserNotFoundException {
-        LOGGER.info("Selecting trainers that are not assigned to trainee with username: {}", username);
-        Trainee trainee = select(username);
-        List<Trainer> notAssignedTrainers;
-        Transaction transaction = null;
-        try (Session session = sessionFactory.getCurrentSession()) {
-            transaction = session.beginTransaction();
-            List<String> trainersUsernames = session.createQuery("select username from Trainer", String.class).list();
-            if (trainersUsernames.isEmpty()) {
-                LOGGER.error("There are no trainers in the database");
-                throw new NoExpectedDataInDatabaseException("There are no trainers in the database");
-            }
-            List<String> assignedTrainersUsernames = trainee.getTrainings().stream()
-                    .map(training -> training.getTrainer().getUsername())
-                    .toList();
-            trainersUsernames.removeAll(assignedTrainersUsernames);
-            notAssignedTrainers = session.createQuery("from Trainer where username in (:usernames)", Trainer.class)
-                    .setParameter("usernames", trainersUsernames)
-                    .list();
-            transaction.commit();
-            LOGGER.info("Successfully selected trainers not assigned to trainee with username: {}", username);
-        } catch (HibernateException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            LOGGER.error("Failed to select trainers not assigned: {}", e.getMessage());
-            throw e;
-        } finally {
-            sessionFactory.getCurrentSession().close();
+    @Transactional(readOnly = true)
+    public List<Trainer> selectNotAssignedTrainers(Trainee trainee) {
+        List<String> trainersUsernames = entityManager.createQuery("select username from Trainer", String.class).getResultList();
+        if (trainersUsernames.isEmpty()) {
+            return Collections.emptyList();
         }
-        return notAssignedTrainers;
+        entityManager.refresh(trainee);
+        List<String> assignedTrainersUsernames = trainee.getTrainings().stream()
+                .map(training -> training.getTrainer().getUsername())
+                .toList();
+        trainersUsernames.removeAll(assignedTrainersUsernames);
+        LOGGER.info("Trainers that are not assigned to trainee were successfully selected");
+        return entityManager.createQuery("from Trainer where username in :usernames", Trainer.class)
+                .setParameter("usernames", trainersUsernames)
+                .getResultList();
     }
 
     @Override
-    public void updateTrainers(String username, Map<String, Boolean> trainerUsernames) throws UserNotFoundException {
-        LOGGER.info("Updating trainers with usernames {} to trainee with username: {}", trainerUsernames, username);
-        Trainee trainee = select(username);
-        Transaction transaction = null;
-        try (Session session = sessionFactory.getCurrentSession();) {
-            transaction = session.beginTransaction();
-            Set<Trainer> trainersToAdd = new HashSet<>();
-            Set<Trainer> trainersToRemove = new HashSet<>();
-            for (String current : trainerUsernames.keySet()) {
-                Trainer trainer = session.createQuery("from Trainer where username = :username", Trainer.class)
+    @Transactional
+    public void updateTrainers(Trainee trainee, Map<String, Boolean> trainerUsernames) {
+        Set<Trainer> trainersToAdd = new HashSet<>();
+        Set<Trainer> trainersToRemove = new HashSet<>();
+        Trainer trainer;
+        for (String current : trainerUsernames.keySet()) {
+            try {
+                trainer = entityManager.createQuery("from Trainer where username = :username", Trainer.class)
                         .setParameter("username", current)
-                        .uniqueResult();
-                if (trainer == null) {
-                    LOGGER.error("Trainer with username {} was not found", current);
-                    throw new UserNotFoundException("Trainer with username " + current + " was not found");
-                }
-                if (Boolean.TRUE.equals(trainerUsernames.get(current))) {
-                    trainersToAdd.add(trainer);
-                } else {
-                    trainersToRemove.add(trainer);
-                }
+                        .getSingleResult();
+            } catch (NoResultException e) {
+                throw new UserNotFoundException("Trainer with username " + current + " was not found");
             }
-            trainee.setTrainers(trainersToAdd);
-            trainee.removeTrainers(trainersToRemove);
-            session.merge(trainee);
-            transaction.commit();
-            LOGGER.info("Trainers were successfully updated");
-        } catch (HibernateException e) {
-            if (transaction != null) {
-                transaction.rollback();
+            if (trainerUsernames.get(current)) {
+                trainersToAdd.add(trainer);
+            } else {
+                trainersToRemove.add(trainer);
             }
-            LOGGER.error("Failed to update trainers: {}", e.getMessage());
-            throw e;
-        } catch (UserNotFoundException e) {
-            LOGGER.error("Failed to update trainers: {}", e.getMessage());
-            throw e;
-        } finally {
-            sessionFactory.getCurrentSession().close();
         }
+        entityManager.refresh(trainee);
+        trainee.setTrainers(trainersToAdd);
+        trainee.removeTrainers(trainersToRemove);
+        entityManager.merge(trainee);
+        LOGGER.info("Trainers were successfully updated");
     }
 
     @Override
-    public void delete(String username) throws UserNotFoundException {
-        LOGGER.info("Deleting trainee with username: {}", username);
-        Trainee trainee = select(username);
-        Transaction transaction = null;
-        try (Session session = sessionFactory.getCurrentSession()) {
-            transaction = session.beginTransaction();
-            session.remove(trainee);
-            transaction.commit();
-        } catch (HibernateException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            LOGGER.error("Failed to delete trainee: {}", e.getMessage());
-            throw e;
-        } finally {
-            sessionFactory.getCurrentSession().close();
-        }
-        LOGGER.info("Trainee was successfully deleted");
+    @Transactional
+    public void delete(String username) {
+        Trainee trainee = entityManager.createQuery("from Trainee where username = :username", Trainee.class)
+                .setParameter("username", username)
+                .getSingleResult();
+        entityManager.refresh(trainee);
+        entityManager.remove(trainee);
+        LOGGER.info("Trainee {} was successfully deleted", trainee.getUsername());
     }
 
     @Override
-    public Trainee select(String username) throws UserNotFoundException {
-        LOGGER.info("Selecting trainee with username: {}", username);
+    @Transactional(readOnly = true)
+    public Trainee select(String username) {
         Trainee trainee;
-        Transaction transaction = null;
-        try (Session session = sessionFactory.getCurrentSession()) {
-            transaction = session.beginTransaction();
-            trainee = session.createQuery("from Trainee where username = :username", Trainee.class)
+        try {
+            trainee = entityManager.createQuery("from Trainee where username = :username", Trainee.class)
                     .setParameter("username", username)
-                    .uniqueResult();
-            if (trainee == null) {
-                LOGGER.error(NOT_FOUND_MESSAGE, username);
-                throw new UserNotFoundException("Trainee with username " + username + " was not found");
-            }
-            transaction.commit();
-            LOGGER.info("Trainee was successfully selected");
-        } catch (HibernateException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            LOGGER.error("Failed to select trainee: {}", e.getMessage());
-            throw e;
-        } finally {
-            sessionFactory.getCurrentSession().close();
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            throw new UserNotFoundException("Trainee with username " + username + " was not found");
         }
+        LOGGER.info("Trainee with username {} was successfully selected", username);
         return trainee;
     }
 
     @Override
-    public List<Trainee> selectAll() throws NoExpectedDataInDatabaseException {
-        LOGGER.info("Selecting all trainees");
-        List<Trainee> trainees;
-        Transaction transaction = null;
-        try (Session session = sessionFactory.getCurrentSession()) {
-            transaction = session.beginTransaction();
-            trainees = session.createQuery("from Trainee", Trainee.class).list();
-            if (trainees.isEmpty()) {
-                LOGGER.error("There are no trainees in the database");
-                throw new NoExpectedDataInDatabaseException("There are no trainees in the database");
-            }
-            transaction.commit();
-            LOGGER.info("All trainees were successfully selected");
-        } catch (HibernateException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            LOGGER.error("Failed to select all trainees: {}", e.getMessage());
-            throw e;
-        } finally {
-            sessionFactory.getCurrentSession().close();
-        }
-        return trainees;
+    @Transactional(readOnly = true)
+    public List<Trainee> selectAll() {
+        LOGGER.info("Successfully selected all trainees");
+        return entityManager.createQuery("SELECT t FROM Trainee t", Trainee.class).getResultList();
     }
 }

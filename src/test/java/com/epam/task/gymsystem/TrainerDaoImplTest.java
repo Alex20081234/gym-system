@@ -1,39 +1,34 @@
 package com.epam.task.gymsystem;
 
-import com.epam.task.gymsystem.common.ActivityStatusAlreadyExistsException;
-import com.epam.task.gymsystem.common.NoExpectedDataInDatabaseException;
 import com.epam.task.gymsystem.common.UserNotFoundException;
 import com.epam.task.gymsystem.dao.TraineeDaoImpl;
 import com.epam.task.gymsystem.dao.TrainerDaoImpl;
 import com.epam.task.gymsystem.dao.TrainingDaoImpl;
-import com.epam.task.gymsystem.domain.Trainee;
-import com.epam.task.gymsystem.domain.Trainer;
-import com.epam.task.gymsystem.domain.Training;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
+import com.epam.task.gymsystem.domain.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 @SpringBootTest
+@Transactional
 class TrainerDaoImplTest {
     @Autowired
     private TrainerDaoImpl trainerDao;
     @Autowired
-    private SessionFactory sessionFactory;
-    @Autowired
     private TraineeDaoImpl traineeDao;
     @Autowired
     private TrainingDaoImpl trainingDao;
+    @PersistenceContext
+    private EntityManager entityManager;
     private Trainer initial;
 
     @BeforeEach
@@ -44,57 +39,32 @@ class TrainerDaoImplTest {
                 .firstName("Test")
                 .lastName("Trainer")
                 .isActive(true)
-                .specialization(null)
-                .trainings(new ArrayList<>())
-                .trainees(new HashSet<>())
+                .specialization(entityManager.find(TrainingType.class, 1))
                 .build();
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", sessionFactory);
     }
 
-    void cleanUp(String username) throws UserNotFoundException {
+    void cleanUp(String username) {
         Trainer trainer = trainerDao.select(username);
-        sessionFactory.getCurrentSession().beginTransaction();
-        sessionFactory.getCurrentSession().remove(trainer);
-        sessionFactory.getCurrentSession().getTransaction().commit();
+        entityManager.remove(trainer);
     }
 
-    void cleanTrainee(String username) throws UserNotFoundException {
+    void cleanTrainee(String username) {
         traineeDao.delete(username);
     }
 
     @Test
-    void testCreate() throws UserNotFoundException {
+    void testCreate() {
         trainerDao.create(initial);
         Trainer found = trainerDao.select("Test.Trainer");
         cleanUp("Test.Trainer");
         assertNotNull(found);
-        areSame(initial, found);
+        assertEquals(initial, found);
     }
 
     @Test
-    void testCreateWithNullUsername() {
-        initial.setUsername(null);
-        assertThrows(IllegalArgumentException.class, () -> trainerDao.create(initial));
-    }
-
-    @Test
-    void testCreateThrowsException() throws UserNotFoundException {
+    void testChangePassword() {
         trainerDao.create(initial);
-        SessionFactory mockSessionFactory = mock(SessionFactory.class);
-        Session mockSession = mock(Session.class);
-        doThrow(HibernateException.class).when(mockSessionFactory).openSession();
-        doReturn(mockSession).when(mockSessionFactory).getCurrentSession();
-        doNothing().when(mockSession).close();
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", mockSessionFactory);
-        assertThrows(HibernateException.class, () -> trainerDao.create(initial));
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", sessionFactory);
-        cleanUp("Test.Trainer");
-    }
-
-    @Test
-    void testChangePassword() throws UserNotFoundException {
-        trainerDao.create(initial);
-        trainerDao.changePassword("Test.Trainer", "newpassword");
+        trainerDao.changePassword(trainerDao.select("Test.Trainer"), "newpassword");
         Trainer found = trainerDao.select("Test.Trainer");
         cleanUp("Test.Trainer");
         assertNotNull(found);
@@ -102,26 +72,7 @@ class TrainerDaoImplTest {
     }
 
     @Test
-    void testChangePasswordWithNullNewPassword() {
-        assertThrows(IllegalArgumentException.class, () -> trainerDao.changePassword("Test.Trainer", null));
-    }
-
-    @Test
-    void testChangePasswordThrowsException() throws UserNotFoundException {
-        trainerDao.create(initial);
-        SessionFactory mockSessionFactory = mock(SessionFactory.class);
-        Session mockSession = mock(Session.class);
-        doThrow(HibernateException.class).when(mockSessionFactory).openSession();
-        doReturn(mockSession).when(mockSessionFactory).getCurrentSession();
-        doNothing().when(mockSession).close();
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", mockSessionFactory);
-        assertThrows(HibernateException.class, () -> trainerDao.changePassword("Test.Trainer", "newpassword"));
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", sessionFactory);
-        cleanUp("Test.Trainer");
-    }
-
-    @Test
-    void testUpdate() throws UserNotFoundException {
+    void testUpdate() {
         trainerDao.create(initial);
         Trainer updated = Trainer.builder()
                 .username("Updated.Trainer")
@@ -129,51 +80,21 @@ class TrainerDaoImplTest {
                 .firstName("Updated")
                 .lastName("Trainer")
                 .isActive(true)
-                .specialization(null)
+                .specialization(entityManager.find(TrainingType.class, 1))
                 .trainings(new ArrayList<>())
                 .trainees(new HashSet<>())
                 .build();
-        trainerDao.update("Test.Trainer", updated);
+        trainerDao.update(trainerDao.select("Test.Trainer"), updated);
         Trainer found = trainerDao.select("Updated.Trainer");
         cleanUp("Updated.Trainer");
         assertNotNull(found);
-        areSame(updated, found);
+        assertEquals(updated, found);
     }
 
     @Test
-    void testUpdateWithNullUsername() {
-        initial.setUsername(null);
-        assertThrows(IllegalArgumentException.class, () -> trainerDao.update("Test.Trainer", initial));
-    }
-
-    @Test
-    void testUpdateThrowsException() throws UserNotFoundException {
+    void testChangeActivityStatus() {
         trainerDao.create(initial);
-        Trainer updated = Trainer.builder()
-                .username("Updated.Trainer")
-                .password("password")
-                .firstName("Updated")
-                .lastName("Trainer")
-                .isActive(true)
-                .specialization(null)
-                .trainings(new ArrayList<>())
-                .trainees(new HashSet<>())
-                .build();
-        SessionFactory mockSessionFactory = mock(SessionFactory.class);
-        Session mockSession = mock(Session.class);
-        doThrow(HibernateException.class).when(mockSessionFactory).openSession();
-        doReturn(mockSession).when(mockSessionFactory).getCurrentSession();
-        doNothing().when(mockSession).close();
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", mockSessionFactory);
-        assertThrows(HibernateException.class, () -> trainerDao.update("Test.Trainer", updated));
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", sessionFactory);
-        cleanUp("Test.Trainer");
-    }
-
-    @Test
-    void testChangeActivityStatus() throws UserNotFoundException, ActivityStatusAlreadyExistsException {
-        trainerDao.create(initial);
-        trainerDao.changeActivityStatus("Test.Trainer", false);
+        trainerDao.changeActivityStatus(trainerDao.select("Test.Trainer"), false);
         Trainer found = trainerDao.select("Test.Trainer");
         cleanUp("Test.Trainer");
         assertNotNull(found);
@@ -181,28 +102,7 @@ class TrainerDaoImplTest {
     }
 
     @Test
-    void testChangeActivityStatusThrowsException() throws UserNotFoundException {
-        trainerDao.create(initial);
-        SessionFactory mockSessionFactory = mock(SessionFactory.class);
-        Session mockSession = mock(Session.class);
-        doThrow(HibernateException.class).when(mockSessionFactory).openSession();
-        doReturn(mockSession).when(mockSessionFactory).getCurrentSession();
-        doNothing().when(mockSession).close();
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", mockSessionFactory);
-        assertThrows(HibernateException.class, () -> trainerDao.changeActivityStatus("Test.Trainer", false));
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", sessionFactory);
-        cleanUp("Test.Trainer");
-    }
-
-    @Test
-    void testChangeActivityStatusWithAlreadyExistentStatus() throws UserNotFoundException {
-        trainerDao.create(initial);
-        assertThrows(ActivityStatusAlreadyExistsException.class, () -> trainerDao.changeActivityStatus("Test.Trainer", true));
-        cleanUp("Test.Trainer");
-    }
-
-    @Test
-    void testSelectTrainings() throws UserNotFoundException {
+    void testSelectTrainings() {
         trainerDao.create(initial);
         Trainee trainee = Trainee.builder()
                 .username("Test.Trainee")
@@ -212,8 +112,6 @@ class TrainerDaoImplTest {
                 .isActive(true)
                 .dateOfBirth(LocalDate.of(1990, 1, 1))
                 .address("Test address")
-                .trainings(new ArrayList<>())
-                .trainers(new HashSet<>())
                 .build();
         traineeDao.create(trainee);
         Training training = Training.builder()
@@ -222,27 +120,25 @@ class TrainerDaoImplTest {
                 .trainingDate(LocalDate.now())
                 .trainingName("Test training")
                 .duration(60)
+                .trainingType(entityManager.find(TrainingType.class, 1))
+                .build();
+        trainingDao.create(training);
+        TrainingCriteria criteria = TrainingCriteria.builder()
+                .fromDate(LocalDate.now().minusDays(1))
+                .toDate(LocalDate.now().plusDays(1))
+                .partnerUsername("Test.Trainee")
                 .trainingType(null)
                 .build();
-        try {
-            trainingDao.create(training);
-        } catch (UserNotFoundException e) {
-            throw new RuntimeException(e);
-        }
         List<Training> trainings;
-        try {
-            trainings = trainerDao.selectTrainings("Test.Trainer", LocalDate.now().minusDays(1), LocalDate.now().plusDays(1), "Test.Trainee", null);
-        } catch (UserNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        cleanTrainee("Test.Trainee");
+        trainings = trainerDao.selectTrainings(trainerDao.select("Test.Trainer"), criteria);
         cleanUp("Test.Trainer");
+        cleanTrainee("Test.Trainee");
         assertNotNull(trainings);
         assertEquals(1, trainings.size());
     }
 
     @Test
-    void testSelectedTrainingsNoTrainingsSelected() throws UserNotFoundException {
+    void selectTrainingsWithNullCriteria() {
         trainerDao.create(initial);
         Trainee trainee = Trainee.builder()
                 .username("Test.Trainee")
@@ -252,8 +148,6 @@ class TrainerDaoImplTest {
                 .isActive(true)
                 .dateOfBirth(LocalDate.of(1990, 1, 1))
                 .address("Test address")
-                .trainings(new ArrayList<>())
-                .trainers(new HashSet<>())
                 .build();
         traineeDao.create(trainee);
         Training training = Training.builder()
@@ -262,58 +156,33 @@ class TrainerDaoImplTest {
                 .trainingDate(LocalDate.now())
                 .trainingName("Test training")
                 .duration(60)
-                .trainingType(null)
+                .trainingType(entityManager.find(TrainingType.class, 1))
                 .build();
-        try {
-            trainingDao.create(training);
-        } catch (UserNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        trainingDao.create(training);
         List<Training> trainings;
-        try {
-            trainings = trainerDao.selectTrainings("Test.Trainer", LocalDate.now().plusDays(1), null, null, null);
-            assertTrue(trainings.isEmpty());
-            trainings = trainerDao.selectTrainings("Test.Trainer", null, LocalDate.now().minusDays(1), null, null);
-            assertTrue(trainings.isEmpty());
-            trainings = trainerDao.selectTrainings("Test.Trainer", LocalDate.now().plusDays(1), null, "Non.Existent", null);
-            assertTrue(trainings.isEmpty());
-        } catch (UserNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        cleanTrainee("Test.Trainee");
+        trainings = trainerDao.selectTrainings(trainerDao.select("Test.Trainer"), null);
         cleanUp("Test.Trainer");
+        cleanTrainee("Test.Trainee");
+        assertNotNull(trainings);
+        assertEquals(1, trainings.size());
     }
 
     @Test
-    void testSelect() throws UserNotFoundException {
+    void select() {
         trainerDao.create(initial);
         Trainer found = trainerDao.select("Test.Trainer");
         cleanUp("Test.Trainer");
         assertNotNull(found);
-        areSame(initial, found);
+        assertEquals(initial, found);
     }
 
     @Test
-    void testSelectNonExistentUser() {
+    void selectThrowsUserNotFoundException() {
         assertThrows(UserNotFoundException.class, () -> trainerDao.select("Non.Existent"));
     }
 
     @Test
-    void testSelectThrowsException() throws UserNotFoundException {
-        trainerDao.create(initial);
-        SessionFactory mockSessionFactory = mock(SessionFactory.class);
-        Session mockSession = mock(Session.class);
-        doThrow(HibernateException.class).when(mockSessionFactory).openSession();
-        doReturn(mockSession).when(mockSessionFactory).getCurrentSession();
-        doNothing().when(mockSession).close();
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", mockSessionFactory);
-        assertThrows(HibernateException.class, () -> trainerDao.select("Test.Trainer"));
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", sessionFactory);
-        cleanUp("Test.Trainer");
-    }
-
-    @Test
-    void testSelectAll() throws NoExpectedDataInDatabaseException, UserNotFoundException {
+    void selectAll() {
         trainerDao.create(initial);
         Trainer another = Trainer.builder()
                 .username("Test.Trainer2")
@@ -321,7 +190,7 @@ class TrainerDaoImplTest {
                 .firstName("Test")
                 .lastName("Trainer2")
                 .isActive(true)
-                .specialization(null)
+                .specialization(entityManager.find(TrainingType.class, 2))
                 .trainings(new ArrayList<>())
                 .trainees(new HashSet<>())
                 .build();
@@ -332,48 +201,10 @@ class TrainerDaoImplTest {
         assertNotNull(trainers);
         trainers.forEach(trainer -> {
             if (trainer.getUsername().equals("Test.Trainer")) {
-                areSame(initial, trainer);
+                assertEquals(initial, trainer);
             } else if (trainer.getUsername().equals("Test.Trainer2")) {
-                areSame(another, trainer);
+                assertEquals(another, trainer);
             }
         });
-    }
-
-    @Test
-    void testSelectAllThrowsException() throws UserNotFoundException {
-        trainerDao.create(initial);
-        SessionFactory mockSessionFactory = mock(SessionFactory.class);
-        Session mockSession = mock(Session.class);
-        doThrow(HibernateException.class).when(mockSessionFactory).openSession();
-        doReturn(mockSession).when(mockSessionFactory).getCurrentSession();
-        doNothing().when(mockSession).close();
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", mockSessionFactory);
-        assertThrows(HibernateException.class, () -> trainerDao.selectAll());
-        ReflectionTestUtils.setField(trainerDao, "sessionFactory", sessionFactory);
-        cleanUp("Test.Trainer");
-    }
-
-    @Test
-    void testSelectAllThrowsNoExpectedDataInDatabaseException() {
-        assertThrows(NoExpectedDataInDatabaseException.class, () -> trainerDao.selectAll());
-    }
-
-    private void areSame(Trainer expected, Trainer actual) {
-        assertEquals(expected.getUsername(), actual.getUsername());
-        assertEquals(expected.getPassword(), actual.getPassword());
-        assertEquals(expected.getFirstName(), actual.getFirstName());
-        assertEquals(expected.getLastName(), actual.getLastName());
-        assertEquals(expected.getIsActive(), actual.getIsActive());
-        assertEquals(expected.getSpecialization(), actual.getSpecialization());
-        if (expected.getTrainings() == null) {
-            assertNull(actual.getTrainings());
-        } else {
-            assertEquals(expected.getTrainings().stream().toList(), actual.getTrainings().stream().toList());
-        }
-        if (expected.getTrainees() == null) {
-            assertNull(actual.getTrainees());
-        } else {
-            assertEquals(expected.getTrainees().stream().toList(), actual.getTrainees().stream().toList());
-        }
     }
 }

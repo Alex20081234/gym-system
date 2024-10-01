@@ -1,61 +1,83 @@
 package com.epam.task.gymsystem.service;
 
-import com.epam.task.gymsystem.common.ActivityStatusAlreadyExistsException;
-import com.epam.task.gymsystem.common.NoExpectedDataInDatabaseException;
-import com.epam.task.gymsystem.common.UserNotFoundException;
 import com.epam.task.gymsystem.common.UserUtils;
-import com.epam.task.gymsystem.dao.TrainerDaoImpl;
+import com.epam.task.gymsystem.dao.TrainerDao;
 import com.epam.task.gymsystem.domain.Trainer;
 import com.epam.task.gymsystem.domain.Training;
-import com.epam.task.gymsystem.domain.TrainingType;
+import com.epam.task.gymsystem.domain.TrainingCriteria;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.time.LocalDate;
 import java.util.List;
 
 @Service
 public class TrainerServiceImpl implements TrainerService {
-    private final TrainerDaoImpl dao;
+    private final TrainerDao dao;
+    private final UserUtils userUtils;
+    private static final String NOT_VALID = "Trainer is not valid";
 
     @Autowired
-    public TrainerServiceImpl(TrainerDaoImpl dao) {
+    public TrainerServiceImpl(TrainerDao dao, UserUtils userUtils) {
         this.dao = dao;
+        this.userUtils = userUtils;
     }
 
     @Override
     public void create(Trainer trainer) {
-        UserUtils.setUsernameAndPassword(trainer);
+        if (trainer == null) {
+            throw new IllegalArgumentException(NOT_VALID);
+        }
+        userUtils.setUsernameAndPassword(trainer, selectAll().stream().map(Trainer::getUsername).toList());
+        if (!isValid(trainer)) {
+            throw new IllegalArgumentException(NOT_VALID);
+        }
         dao.create(trainer);
     }
 
     @Override
-    public void changePassword(String username, String newPassword) throws UserNotFoundException {
-        dao.changePassword(username, newPassword);
-    }
-
-    @Override
-    public void update(String username, Trainer updates) throws UserNotFoundException {
+    public void changePassword(String username, String newPassword) {
         Trainer trainer = select(username);
-        dao.update(username, (Trainer) UserUtils.mergeUsers(trainer, updates));
+        if (newPassword == null || newPassword.isEmpty()) {
+            throw new IllegalArgumentException("New password is not valid");
+        }
+        dao.changePassword(trainer, newPassword);
     }
 
     @Override
-    public void changeActivityStatus(String username, boolean newActivityStatus) throws UserNotFoundException, ActivityStatusAlreadyExistsException {
-        dao.changeActivityStatus(username, newActivityStatus);
+    public void update(String username, Trainer updates) {
+        if (updates == null) {
+            throw new IllegalArgumentException(NOT_VALID);
+        }
+        Trainer trainer = select(username);
+        dao.update(trainer, (Trainer) userUtils.mergeUsers(trainer, updates, selectAll().stream().map(Trainer::getUsername).toList()));
     }
 
     @Override
-    public List<Training> selectTrainings(String username, LocalDate fromDate, LocalDate toDate, String partnerUsername, TrainingType trainingType) throws UserNotFoundException {
-        return dao.selectTrainings(username, fromDate, toDate, partnerUsername, trainingType);
+    public void changeActivityStatus(String username, boolean newActivityStatus) {
+        Trainer trainer = select(username);
+        if (trainer.getIsActive() == newActivityStatus) {
+            throw new IllegalArgumentException("Activity status is already " + newActivityStatus);
+        }
+        dao.changeActivityStatus(trainer, newActivityStatus);
     }
 
     @Override
-    public Trainer select(String username) throws UserNotFoundException {
+    public List<Training> selectTrainings(String username, TrainingCriteria criteria) {
+        return dao.selectTrainings(select(username), criteria);
+    }
+
+    @Override
+    public Trainer select(String username) {
         return dao.select(username);
     }
 
     @Override
-    public List<Trainer> selectAll() throws NoExpectedDataInDatabaseException {
+    public List<Trainer> selectAll() {
         return dao.selectAll();
+    }
+
+    private boolean isValid(Trainer trainer) {
+        return trainer != null && trainer.getFirstName() != null && trainer.getLastName() != null
+                && trainer.getUsername() != null && trainer.getPassword() != null
+                && trainer.getIsActive() != null && trainer.getSpecialization() != null;
     }
 }

@@ -1,14 +1,12 @@
 package com.epam.task.gymsystem.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import java.util.List;
 
 @Builder
 @Data
+@ToString(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -16,8 +14,9 @@ import java.util.List;
 public class TrainingType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-    @Column(name = "TrainingTypeName")
+    private Integer id;
+    @Column(name = "TrainingTypeName", nullable = false)
+    @ToString.Include
     private String name;
     @OneToMany(mappedBy = "specialization")
     private List<Trainer> trainers;

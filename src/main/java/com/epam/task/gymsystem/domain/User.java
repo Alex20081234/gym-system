@@ -1,15 +1,13 @@
 package com.epam.task.gymsystem.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
-@EqualsAndHashCode(exclude = "password")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -18,12 +16,14 @@ import lombok.experimental.SuperBuilder;
 public abstract class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
     @Column(name = "FirstName", nullable = false)
     private String firstName;
     @Column(name = "LastName", nullable = false)
     private String lastName;
     @Column(name = "Username", nullable = false, unique = true)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private String username;
     @Column(name = "Password", nullable = false)
     private String password;

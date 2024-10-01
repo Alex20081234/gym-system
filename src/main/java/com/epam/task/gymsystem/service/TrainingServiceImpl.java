@@ -1,9 +1,6 @@
 package com.epam.task.gymsystem.service;
 
-import com.epam.task.gymsystem.common.NoExpectedDataInDatabaseException;
-import com.epam.task.gymsystem.common.TrainingNotFoundException;
-import com.epam.task.gymsystem.common.UserNotFoundException;
-import com.epam.task.gymsystem.dao.TrainingDaoImpl;
+import com.epam.task.gymsystem.dao.TrainingDao;
 import com.epam.task.gymsystem.domain.Training;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,25 +8,36 @@ import java.util.List;
 
 @Service
 public class TrainingServiceImpl implements TrainingService {
-    private final TrainingDaoImpl dao;
+    private final TrainingDao dao;
+    private static final String NOT_VALID = "Training is not valid";
 
     @Autowired
-    public TrainingServiceImpl(TrainingDaoImpl dao) {
+    public TrainingServiceImpl(TrainingDao dao) {
         this.dao = dao;
     }
 
     @Override
-    public void create(Training training) throws UserNotFoundException {
+    public void create(Training training) {
+        if (!isValid(training)) {
+            throw new IllegalArgumentException(NOT_VALID);
+        }
         dao.create(training);
     }
 
     @Override
-    public Training select(int id) throws TrainingNotFoundException {
+    public Training select(int id) {
         return dao.select(id);
     }
 
     @Override
-    public List<Training> selectAll() throws NoExpectedDataInDatabaseException {
+    public List<Training> selectAll() {
         return dao.selectAll();
+    }
+
+    private boolean isValid(Training training) {
+        return training != null && training.getTrainee() != null
+                && training.getTrainer() != null && training.getTrainingName() != null
+                && training.getTrainingType() != null && training.getTrainingDate() != null
+                && training.getDuration() > 0;
     }
 }
