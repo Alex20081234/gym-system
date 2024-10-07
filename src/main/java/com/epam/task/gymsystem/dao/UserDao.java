@@ -7,10 +7,18 @@ import java.util.List;
 
 public interface UserDao<T extends User> {
     void create(T user);
-    void changePassword(T user, String newPassword);
-    void update(T initial, T updated);
-    void changeActivityStatus(T user, boolean newActivityStatus);
+
+    void changePassword(String username, String newPassword);
+
+    void update(String username, T updated);
+
+    void changeActivityStatus(String username, boolean newActivityStatus);
+
     List<Training> selectTrainings(T user, TrainingCriteria criteria);
+
     T select(String username);
+
     List<T> selectAll();
+
+    List<String> selectUsernames();
 }

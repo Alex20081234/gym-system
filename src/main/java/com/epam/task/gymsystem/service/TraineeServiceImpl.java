@@ -5,45 +5,50 @@ import com.epam.task.gymsystem.dao.TraineeDao;
 import com.epam.task.gymsystem.domain.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class TraineeServiceImpl implements TraineeService {
-    private final TraineeDao dao;
-    private final UserUtils userUtils;
     private static final String NOT_VALID = "Trainee is not valid";
+    private final TraineeDao dao;
 
     @Autowired
-    public TraineeServiceImpl(TraineeDao dao, UserUtils userUtils) {
+    public TraineeServiceImpl(TraineeDao dao) {
         this.dao = dao;
-        this.userUtils = userUtils;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Trainer> selectNotAssignedTrainers(String username) {
-        return dao.selectNotAssignedTrainers(select(username));
+        Trainee trainee = dao.select(username);
+        return dao.selectNotAssignedTrainers(trainee);
     }
 
     @Override
+    @Transactional
     public void updateTrainers(String username, Map<String, Boolean> trainerUsernames) {
         if (trainerUsernames == null) {
             throw new IllegalArgumentException("Trainers are not valid");
         }
-        dao.updateTrainers(select(username), trainerUsernames);
+        Trainee trainee = dao.select(username);
+        dao.updateTrainers(trainee, trainerUsernames);
     }
 
     @Override
+    @Transactional
     public void delete(String username) {
         dao.delete(username);
     }
 
     @Override
+    @Transactional
     public void create(Trainee trainee) {
         if (trainee == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
-        userUtils.setUsernameAndPassword(trainee, selectAll().stream().map(Trainee::getUsername).toList());
+        UserUtils.setUsernameAndPassword(trainee, dao.selectUsernames());
         if (!isValid(trainee)) {
             throw new IllegalArgumentException(NOT_VALID);
         }
@@ -51,42 +56,48 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
+    @Transactional
     public void changePassword(String username, String newPassword) {
-        if (newPassword == null || newPassword.isEmpty()) {
+        if (newPassword == null || newPassword.length() < 8 || newPassword.length() > 20) {
             throw new IllegalArgumentException("New password is not valid");
         }
-        dao.changePassword(select(username), newPassword);
+        dao.changePassword(username, newPassword);
     }
 
     @Override
+    @Transactional
     public void update(String username, Trainee updates) {
         if (updates == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
-        Trainee trainee = select(username);
-        dao.update(trainee, (Trainee) userUtils.mergeUsers(trainee, updates, selectAll().stream().map(Trainee::getUsername).toList()));
+        Trainee trainee = dao.select(username);
+        dao.update(username, (Trainee) UserUtils.mergeUsers(trainee, updates, dao.selectUsernames()));
     }
 
     @Override
+    @Transactional
     public void changeActivityStatus(String username, boolean newActivityStatus) {
-        Trainee trainee = select(username);
+        Trainee trainee = dao.select(username);
         if (trainee.getIsActive() == newActivityStatus) {
             throw new IllegalArgumentException("Activity status is already " + newActivityStatus);
         }
-        dao.changeActivityStatus(trainee, newActivityStatus);
+        dao.changeActivityStatus(username, newActivityStatus);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Training> selectTrainings(String username, TrainingCriteria criteria) {
-        return dao.selectTrainings(select(username), criteria);
+        return dao.selectTrainings(dao.select(username), criteria);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Trainee select(String username) {
         return dao.select(username);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Trainee> selectAll() {
         return dao.selectAll();
     }

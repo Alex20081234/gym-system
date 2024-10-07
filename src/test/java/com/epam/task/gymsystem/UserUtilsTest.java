@@ -3,22 +3,16 @@ package com.epam.task.gymsystem;
 import com.epam.task.gymsystem.common.UserUtils;
 import com.epam.task.gymsystem.domain.*;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import java.time.LocalDate;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@SpringBootTest
 class UserUtilsTest {
-    @Autowired
-    private UserUtils userUtils;
-
     @Test
-    void setUsernameAndPassword() {
+    void setUsernameAndPasswordShouldGenerateAndSetUsernameAndPassword() {
         User user = Trainer.builder().firstName("John").lastName("Doe").build();
-        userUtils.setUsernameAndPassword(user, Collections.emptyList());
+        UserUtils.setUsernameAndPassword(user, Collections.emptyList());
         assertNotNull(user.getUsername());
         assertNotNull(user.getPassword());
         assertEquals(10, user.getPassword().length());
@@ -26,24 +20,24 @@ class UserUtilsTest {
     }
 
     @Test
-    void generateUsername() {
-        String username = userUtils.generateUsername("Jane", "Doe", Collections.emptyList());
+    void generateUsernameShouldGenerateUsername() {
+        String username = UserUtils.generateUsername("Jane", "Doe", Collections.emptyList());
         assertNotNull(username);
         assertEquals("Jane.Doe", username);
     }
 
     @Test
-    void generateUsernameWithExistingUsernames() {
-        String username = userUtils.generateUsername("Jane", "Doe", List.of("Jane.Doe"));
+    void generateUsernameShouldGenerateUsernameWhenItAlreadyExists() {
+        String username = UserUtils.generateUsername("Jane", "Doe", List.of("Jane.Doe"));
         assertNotNull(username);
         assertEquals("Jane.Doe1", username);
-        username = userUtils.generateUsername("Jane", "Doe", List.of("Jane.Doe", "Jane.Doe1"));
+        username = UserUtils.generateUsername("Jane", "Doe", List.of("Jane.Doe", "Jane.Doe1"));
         assertNotNull(username);
         assertEquals("Jane.Doe2", username);
     }
 
     @Test
-    void mergeTrainees() {
+    void mergeTraineesShouldReturnMerged() {
         Trainee initial = Trainee.builder()
                 .username("Test.Trainee")
                 .password("password")
@@ -65,7 +59,7 @@ class UserUtilsTest {
                 .trainings(List.of(Training.builder().id(1).build()))
                 .trainers(Set.of(Trainer.builder().username("Test.Trainer").build()))
                 .build();
-        User mergedUser = userUtils.mergeUsers(initial, updates, Collections.emptyList());
+        User mergedUser = UserUtils.mergeUsers(initial, updates, Collections.emptyList());
         Trainee expected = Trainee.builder()
                 .firstName("Jane")
                 .lastName("Smith")
@@ -81,7 +75,7 @@ class UserUtilsTest {
     }
 
     @Test
-    void mergeTrainers() {
+    void mergeTrainersShouldReturnMerged() {
         Trainer initial = Trainer.builder()
                 .username("Test.Trainee")
                 .password("password")
@@ -101,7 +95,7 @@ class UserUtilsTest {
                 .trainings(List.of(Training.builder().id(1).build()))
                 .trainees(Set.of(Trainee.builder().username("Test.Trainee").build()))
                 .build();
-        User mergedUser = userUtils.mergeUsers(initial, updates, Collections.emptyList());
+        User mergedUser = UserUtils.mergeUsers(initial, updates, Collections.emptyList());
         Trainer expected = Trainer.builder()
                 .firstName("Jane")
                 .lastName("Smith")
@@ -116,20 +110,20 @@ class UserUtilsTest {
     }
 
     @Test
-    void mergeUsersWithNullUpdates() {
+    void mergeUsersShouldReturnInitialWhenNullUpdates() {
         Trainee initial = new Trainee();
         initial.setFirstName("John");
         initial.setLastName("Doe");
-        User mergedUser = userUtils.mergeUsers(initial, null, Collections.emptyList());
+        User mergedUser = UserUtils.mergeUsers(initial, null, Collections.emptyList());
         assertEquals(initial, mergedUser);
     }
 
     @Test
-    void mergeUsersWithNullInitial() {
+    void mergeUsersShouldReturnUpdatesWhenNullInitial() {
         Trainee updates = new Trainee();
         updates.setFirstName("Jane");
         updates.setLastName("Smith");
-        User mergedUser = userUtils.mergeUsers(null, updates, Collections.emptyList());
+        User mergedUser = UserUtils.mergeUsers(null, updates, Collections.emptyList());
         assertEquals(updates, mergedUser);
     }
 

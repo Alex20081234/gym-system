@@ -4,12 +4,13 @@ import com.epam.task.gymsystem.dao.TrainingDao;
 import com.epam.task.gymsystem.domain.Training;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
 public class TrainingServiceImpl implements TrainingService {
-    private final TrainingDao dao;
     private static final String NOT_VALID = "Training is not valid";
+    private final TrainingDao dao;
 
     @Autowired
     public TrainingServiceImpl(TrainingDao dao) {
@@ -17,6 +18,7 @@ public class TrainingServiceImpl implements TrainingService {
     }
 
     @Override
+    @Transactional
     public void create(Training training) {
         if (!isValid(training)) {
             throw new IllegalArgumentException(NOT_VALID);
@@ -25,11 +27,13 @@ public class TrainingServiceImpl implements TrainingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Training select(int id) {
         return dao.select(id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Training> selectAll() {
         return dao.selectAll();
     }

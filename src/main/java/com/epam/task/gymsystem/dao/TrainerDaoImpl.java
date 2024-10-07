@@ -7,52 +7,49 @@ import com.epam.task.gymsystem.domain.Training;
 import com.epam.task.gymsystem.domain.TrainingCriteria;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
-import jakarta.persistence.PersistenceContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Dao
 public class TrainerDaoImpl implements TrainerDao {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TrainerDaoImpl.class);
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final EntityManager entityManager;
+
+    public TrainerDaoImpl(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }
 
     @Override
-    @Transactional
     public void create(Trainer trainer) {
         entityManager.persist(trainer);
-        LOGGER.info("Trainer {} was successfully created", trainer);
     }
 
     @Override
-    @Transactional
-    public void changePassword(Trainer trainer, String newPassword) {
+    public void changePassword(String username, String newPassword) {
+        Trainer trainer = entityManager.createQuery("select t from Trainer t where t.username = :username", Trainer.class)
+                .setParameter("username", username)
+                .getSingleResult();
         trainer.setPassword(newPassword);
         entityManager.merge(trainer);
-        LOGGER.info("Trainer {}'s password was successfully changed", trainer.getUsername());
     }
 
     @Override
-    @Transactional
-    public void update(Trainer trainer, Trainer updated) {
-        updated.setId(trainer.getId());
+    public void update(String username, Trainer updated) {
+        updated.setId(entityManager.createQuery("select id from Trainer where username = :username", Integer.class)
+                .setParameter("username", username)
+                .getSingleResult());
         entityManager.merge(updated);
-        LOGGER.info("Trainer {} was successfully updated", trainer.getUsername());
     }
 
     @Override
-    @Transactional
-    public void changeActivityStatus(Trainer trainer, boolean newActivityStatus) {
+    public void changeActivityStatus(String username, boolean newActivityStatus) {
+        Trainer trainer = entityManager.createQuery("select t from Trainer t where t.username = :username", Trainer.class)
+                .setParameter("username", username)
+                .getSingleResult();
         trainer.setIsActive(newActivityStatus);
         entityManager.merge(trainer);
-        LOGGER.info("Trainer {}'s activity status was successfully changed", trainer.getUsername());
     }
 
     @Override
     public List<Training> selectTrainings(Trainer trainer, TrainingCriteria criteria) {
-        LOGGER.info("Successfully selected trainings for trainer {}", trainer.getUsername());
         entityManager.refresh(trainer);
         if (criteria == null) {
             return trainer.getTrainings();
@@ -72,7 +69,6 @@ public class TrainerDaoImpl implements TrainerDao {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Trainer select(String username) {
         Trainer trainer;
         try {
@@ -82,14 +78,16 @@ public class TrainerDaoImpl implements TrainerDao {
         } catch (NoResultException e) {
             throw new UserNotFoundException("Trainer with username " + username + " was not found");
         }
-        LOGGER.info("Trainer with username {} was successfully selected", username);
         return trainer;
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<Trainer> selectAll() {
-        LOGGER.info("Successfully selected all trainers");
         return entityManager.createQuery("SELECT t FROM Trainer t", Trainer.class).getResultList();
+    }
+
+    @Override
+    public List<String> selectUsernames() {
+        return entityManager.createQuery("SELECT t.username FROM Trainer t", String.class).getResultList();
     }
 }

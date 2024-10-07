@@ -34,6 +34,7 @@
         <mysql.version>8.0.33</mysql.version>
         <spring.orm.version>6.1.12</spring.orm.version>
         <hikari.version>5.1.0</hikari.version>
+        <h2database.version>2.3.232</h2database.version>
     </properties>
     <dependencies>
         <dependency>
@@ -70,15 +71,28 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>${mysql.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-orm</artifactId>
             <version>${spring.orm.version}</version>
         </dependency>
+
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>${hikari.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2database.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
         </dependency>
     </dependencies>
 

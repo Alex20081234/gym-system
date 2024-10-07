@@ -1,6 +1,5 @@
 package com.epam.task.gymsystem;
 
-import com.epam.task.gymsystem.common.UserUtils;
 import com.epam.task.gymsystem.dao.TraineeDaoImpl;
 import com.epam.task.gymsystem.domain.Trainee;
 import com.epam.task.gymsystem.domain.Trainer;
@@ -14,18 +13,13 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.util.CollectionUtils;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class TraineeServiceImplTest {
     @Mock
     private TraineeDaoImpl dao;
-    @Mock
-    private UserUtils userUtils;
     @InjectMocks
     private TraineeServiceImpl service;
     private Trainee trainee;
@@ -45,37 +39,38 @@ class TraineeServiceImplTest {
     }
 
     @Test
-    void create() {
+    void createShouldTryToAddTraineeToDatabase() {
         doNothing().when(dao).create(any(Trainee.class));
-        doNothing().when(userUtils).setUsernameAndPassword(any(), anyList());
-        trainee.setUsername("Test.Trainee");
-        trainee.setPassword("1234567890");
+        when(dao.selectUsernames()).thenReturn(Collections.emptyList());
         service.create(trainee);
         verify(dao, times(1)).create(trainee);
     }
 
     @Test
-    void createThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> service.create(null));
+    void createShouldThrowIllegalArgumentExceptionWhenTraineeInvalid() {
+        RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.create(null));
+        assertEquals("Trainee is not valid", e.getMessage());
         trainee.setDateOfBirth(null);
-        assertThrows(IllegalArgumentException.class, () -> service.create(trainee));
+        e = assertThrows(IllegalArgumentException.class, () -> service.create(trainee));
+        assertEquals("Trainee is not valid", e.getMessage());
     }
 
     @Test
-    void changePassword() {
+    void changePasswordShouldTryToMakeChangeToDatabase() {
         doNothing().when(dao).changePassword(any(), anyString());
         doReturn(trainee).when(dao).select(anyString());
         service.changePassword("Test.Trainee", "newpassword");
-        verify(dao, times(1)).changePassword(trainee, "newpassword");
+        verify(dao, times(1)).changePassword("Test.Trainee", "newpassword");
     }
 
     @Test
-    void changePasswordThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> service.changePassword("Test.Trainee", ""));
+    void changePasswordShouldThrowIllegalArgumentExceptionWhenPasswordInvalid() {
+        RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.changePassword("Test.Trainee", ""));
+        assertEquals("New password is not valid", e.getMessage());
     }
 
     @Test
-    void update() {
+    void updateShouldTryToUpdateDatabase() {
         Trainee updates = Trainee.builder()
                         .firstName("Updated")
                                 .build();
@@ -92,32 +87,34 @@ class TraineeServiceImplTest {
                 .build();
         when(dao.select(anyString())).thenReturn(trainee);
         doNothing().when(dao).update(any(), any(Trainee.class));
-        when(userUtils.mergeUsers(any(), any(), anyList())).thenReturn(updated);
+        when(dao.selectUsernames()).thenReturn(Collections.emptyList());
         service.update("Test.Trainee", updates);
-        verify(dao, times(1)).update(trainee, updated);
+        verify(dao, times(1)).update("Test.Trainee", updated);
     }
 
     @Test
-    void updateThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> service.update("Test.Trainer", null));
+    void updateShouldThrowIllegalArgumentExceptionWhenInvalidUpdates() {
+        RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.update("Test.Trainer", null));
+        assertEquals("Trainee is not valid", e.getMessage());
     }
 
     @Test
-    void changeActivityStatus() {
+    void changeActivityStatusShouldTryToMakeChangeToDatabase() {
         doNothing().when(dao).changeActivityStatus(any(), anyBoolean());
         doReturn(trainee).when(dao).select(anyString());
         service.changeActivityStatus("Test.Trainee", false);
-        verify(dao, times(1)).changeActivityStatus(trainee, false);
+        verify(dao, times(1)).changeActivityStatus("Test.Trainee", false);
     }
 
     @Test
-    void changeActivityStatusThrowsException() {
+    void changeActivityStatusShouldThrowIllegalArgumentExceptionWhenStatusIsAlreadyThat() {
         doReturn(trainee).when(dao).select(anyString());
-        assertThrows(IllegalArgumentException.class, () -> service.changeActivityStatus("Test.Trainee", true));
+        RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.changeActivityStatus("Test.Trainee", true));
+        assertEquals("Activity status is already true", e.getMessage());
     }
 
     @Test
-    void selectTrainings() {
+    void selectTrainingsShouldTryToReturnTrainings() {
         when(dao.selectTrainings(any(), any())).thenReturn(List.of(new Training(), new Training()));
         TrainingCriteria criteria = TrainingCriteria.builder()
                 .fromDate(LocalDate.now().minusDays(1))
@@ -130,7 +127,7 @@ class TraineeServiceImplTest {
     }
 
     @Test
-    void selectNotAssignedTrainers() {
+    void selectNotAssignedTrainersShouldTryToReturnTrainers() {
         when(dao.selectNotAssignedTrainers(any())).thenReturn(List.of(new Trainer()));
         when(dao.select(anyString())).thenReturn(trainee);
         List<Trainer> trainers = service.selectNotAssignedTrainers("Test.Trainee");
@@ -139,7 +136,7 @@ class TraineeServiceImplTest {
     }
 
     @Test
-    void updateTrainers() {
+    void updateTrainersShouldTryToUpdateDatabase() {
         doNothing().when(dao).updateTrainers(any(), anyMap());
         when(dao.select(anyString())).thenReturn(trainee);
         service.updateTrainers("Test.Trainee", Map.of("Test.Trainer", true));
@@ -147,19 +144,20 @@ class TraineeServiceImplTest {
     }
 
     @Test
-    void updateTrainersThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> service.updateTrainers("Test.Trainee", null));
+    void updateTrainersShouldThrowIllegalArgumentExceptionWhenTrainersInvalid() {
+        RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.updateTrainers("Test.Trainee", null));
+        assertEquals("Trainers are not valid", e.getMessage());
     }
 
     @Test
-    void delete() {
+    void deleteShouldTryToDeleteTraineeFromDatabase() {
         doNothing().when(dao).delete(anyString());
         service.delete("Test.Trainee");
         verify(dao, times(1)).delete("Test.Trainee");
     }
 
     @Test
-    void select() {
+    void selectShouldTryToReturnTrainee() {
         trainee.setUsername("Test.Trainee");
         when(dao.select(anyString())).thenReturn(trainee);
         Trainee found = service.select("Test.Trainer");
@@ -168,7 +166,7 @@ class TraineeServiceImplTest {
     }
 
     @Test
-    void selectAll() {
+    void selectAllShouldTryToReturnAllTrainees() {
         when(dao.selectAll()).thenReturn(List.of(trainee, new Trainee()));
         List<Trainee> trainees = service.selectAll();
         assertFalse(CollectionUtils.isEmpty(trainees));

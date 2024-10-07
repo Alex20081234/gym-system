@@ -7,6 +7,8 @@ import java.util.Map;
 
 public interface TraineeDao extends UserDao<Trainee> {
     List<Trainer> selectNotAssignedTrainers(Trainee trainee);
+
     void updateTrainers(Trainee trainee, Map<String, Boolean> trainerUsernames);
+
     void delete(String username);
 }

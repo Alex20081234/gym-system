@@ -20,6 +20,7 @@ import java.util.Properties;
 @Configuration
 @EnableTransactionManagement
 @PropertySource("classpath:application.properties")
+@PropertySource("classpath:application-${spring.profiles.active}.properties")
 public class GymSystemConfiguration {
     @Value("${spring.datasource.url}")
     private String dbUrl;

@@ -7,26 +7,26 @@ import com.epam.task.gymsystem.domain.Training;
 import com.epam.task.gymsystem.domain.TrainingCriteria;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
 public class TrainerServiceImpl implements TrainerService {
-    private final TrainerDao dao;
-    private final UserUtils userUtils;
     private static final String NOT_VALID = "Trainer is not valid";
+    private final TrainerDao dao;
 
     @Autowired
-    public TrainerServiceImpl(TrainerDao dao, UserUtils userUtils) {
+    public TrainerServiceImpl(TrainerDao dao) {
         this.dao = dao;
-        this.userUtils = userUtils;
     }
 
     @Override
+    @Transactional
     public void create(Trainer trainer) {
         if (trainer == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
-        userUtils.setUsernameAndPassword(trainer, selectAll().stream().map(Trainer::getUsername).toList());
+        UserUtils.setUsernameAndPassword(trainer, dao.selectUsernames());
         if (!isValid(trainer)) {
             throw new IllegalArgumentException(NOT_VALID);
         }
@@ -34,43 +34,48 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
+    @Transactional
     public void changePassword(String username, String newPassword) {
-        Trainer trainer = select(username);
-        if (newPassword == null || newPassword.isEmpty()) {
+        if (newPassword == null || newPassword.length() < 8 || newPassword.length() > 20) {
             throw new IllegalArgumentException("New password is not valid");
         }
-        dao.changePassword(trainer, newPassword);
+        dao.changePassword(username, newPassword);
     }
 
     @Override
+    @Transactional
     public void update(String username, Trainer updates) {
         if (updates == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
-        Trainer trainer = select(username);
-        dao.update(trainer, (Trainer) userUtils.mergeUsers(trainer, updates, selectAll().stream().map(Trainer::getUsername).toList()));
+        Trainer trainer = dao.select(username);
+        dao.update(username, (Trainer) UserUtils.mergeUsers(trainer, updates, dao.selectUsernames()));
     }
 
     @Override
+    @Transactional
     public void changeActivityStatus(String username, boolean newActivityStatus) {
-        Trainer trainer = select(username);
+        Trainer trainer = dao.select(username);
         if (trainer.getIsActive() == newActivityStatus) {
             throw new IllegalArgumentException("Activity status is already " + newActivityStatus);
         }
-        dao.changeActivityStatus(trainer, newActivityStatus);
+        dao.changeActivityStatus(username, newActivityStatus);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Training> selectTrainings(String username, TrainingCriteria criteria) {
-        return dao.selectTrainings(select(username), criteria);
+        return dao.selectTrainings(dao.select(username), criteria);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Trainer select(String username) {
         return dao.select(username);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Trainer> selectAll() {
         return dao.selectAll();
     }

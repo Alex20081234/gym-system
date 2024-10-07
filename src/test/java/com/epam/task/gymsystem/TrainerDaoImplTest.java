@@ -6,11 +6,11 @@ import com.epam.task.gymsystem.dao.TrainerDaoImpl;
 import com.epam.task.gymsystem.dao.TrainingDaoImpl;
 import com.epam.task.gymsystem.domain.*;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -19,6 +19,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
 class TrainerDaoImplTest {
     @Autowired
@@ -27,7 +28,7 @@ class TrainerDaoImplTest {
     private TraineeDaoImpl traineeDao;
     @Autowired
     private TrainingDaoImpl trainingDao;
-    @PersistenceContext
+    @Autowired
     private EntityManager entityManager;
     private Trainer initial;
 
@@ -53,7 +54,7 @@ class TrainerDaoImplTest {
     }
 
     @Test
-    void testCreate() {
+    void createShouldAddTrainerToDatabase() {
         trainerDao.create(initial);
         Trainer found = trainerDao.select("Test.Trainer");
         cleanUp("Test.Trainer");
@@ -62,9 +63,9 @@ class TrainerDaoImplTest {
     }
 
     @Test
-    void testChangePassword() {
+    void changePasswordShouldMakeChangeToDatabase() {
         trainerDao.create(initial);
-        trainerDao.changePassword(trainerDao.select("Test.Trainer"), "newpassword");
+        trainerDao.changePassword("Test.Trainer", "newpassword");
         Trainer found = trainerDao.select("Test.Trainer");
         cleanUp("Test.Trainer");
         assertNotNull(found);
@@ -72,7 +73,7 @@ class TrainerDaoImplTest {
     }
 
     @Test
-    void testUpdate() {
+    void updateShouldUpdateDatabase() {
         trainerDao.create(initial);
         Trainer updated = Trainer.builder()
                 .username("Updated.Trainer")
@@ -84,7 +85,7 @@ class TrainerDaoImplTest {
                 .trainings(new ArrayList<>())
                 .trainees(new HashSet<>())
                 .build();
-        trainerDao.update(trainerDao.select("Test.Trainer"), updated);
+        trainerDao.update("Test.Trainer", updated);
         Trainer found = trainerDao.select("Updated.Trainer");
         cleanUp("Updated.Trainer");
         assertNotNull(found);
@@ -92,9 +93,9 @@ class TrainerDaoImplTest {
     }
 
     @Test
-    void testChangeActivityStatus() {
+    void changeActivityStatusShouldMakeChangeToDatabase() {
         trainerDao.create(initial);
-        trainerDao.changeActivityStatus(trainerDao.select("Test.Trainer"), false);
+        trainerDao.changeActivityStatus("Test.Trainer", false);
         Trainer found = trainerDao.select("Test.Trainer");
         cleanUp("Test.Trainer");
         assertNotNull(found);
@@ -102,7 +103,7 @@ class TrainerDaoImplTest {
     }
 
     @Test
-    void testSelectTrainings() {
+    void selectTrainingsShouldReturnTrainings() {
         trainerDao.create(initial);
         Trainee trainee = Trainee.builder()
                 .username("Test.Trainee")
@@ -138,7 +139,7 @@ class TrainerDaoImplTest {
     }
 
     @Test
-    void selectTrainingsWithNullCriteria() {
+    void selectTrainingsCriteriaShouldReturnTrainingsWhenCriteriaIsNull() {
         trainerDao.create(initial);
         Trainee trainee = Trainee.builder()
                 .username("Test.Trainee")
@@ -168,7 +169,7 @@ class TrainerDaoImplTest {
     }
 
     @Test
-    void select() {
+    void selectShouldReturnTrainer() {
         trainerDao.create(initial);
         Trainer found = trainerDao.select("Test.Trainer");
         cleanUp("Test.Trainer");
@@ -177,12 +178,13 @@ class TrainerDaoImplTest {
     }
 
     @Test
-    void selectThrowsUserNotFoundException() {
-        assertThrows(UserNotFoundException.class, () -> trainerDao.select("Non.Existent"));
+    void selectShouldThrowUserNotFoundExceptionWhenTrainerIsNonExistent() {
+        RuntimeException e = assertThrows(UserNotFoundException.class, () -> trainerDao.select("Non.Existent"));
+        assertEquals("Trainer with username Non.Existent was not found", e.getMessage());
     }
 
     @Test
-    void selectAll() {
+    void selectAllShouldReturnAllTrainers() {
         trainerDao.create(initial);
         Trainer another = Trainer.builder()
                 .username("Test.Trainer2")

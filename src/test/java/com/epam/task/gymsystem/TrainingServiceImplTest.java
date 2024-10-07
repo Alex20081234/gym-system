@@ -60,26 +60,27 @@ class TrainingServiceImplTest {
     }
 
     @Test
-    void create() {
+    void createShouldTryToAddTrainingToDatabase() {
         doNothing().when(dao).create(any(Training.class));
         service.create(initial);
         verify(dao, times(1)).create(initial);
     }
 
     @Test
-    void createThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> service.create(null));
+    void createShouldThrowExceptionWhenInvalidTraining() {
+        RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.create(null));
+        assertEquals("Training is not valid", e.getMessage());
     }
 
     @Test
-    void select() {
+    void selectShouldTryToReturnTraining() {
         when(dao.select(1)).thenReturn(initial);
         Training actual = service.select(1);
         assertEquals(initial, actual);
     }
 
     @Test
-    void selectAll() {
+    void selectAllShouldTryToReturnAllTrainings() {
         when(dao.selectAll()).thenReturn(List.of(initial, new Training()));
         List<Training> trainings = service.selectAll();
         assertNotNull(trainings);

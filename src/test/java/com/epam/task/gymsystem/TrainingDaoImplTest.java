@@ -9,17 +9,18 @@ import com.epam.task.gymsystem.domain.Trainer;
 import com.epam.task.gymsystem.domain.Training;
 import com.epam.task.gymsystem.domain.TrainingType;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
 class TrainingDaoImplTest {
     @Autowired
@@ -28,7 +29,7 @@ class TrainingDaoImplTest {
     private TraineeDaoImpl traineeDao;
     @Autowired
     private TrainerDaoImpl trainerDao;
-    @PersistenceContext
+    @Autowired
     private EntityManager entityManager;
 
     private final Trainee trainee = Trainee.builder()
@@ -66,13 +67,12 @@ class TrainingDaoImplTest {
         traineeDao.delete(current);
     }
 
-    @Transactional
     void cleanUpTrainer(Trainer current) {
         entityManager.remove(current);
     }
 
     @Test
-    void create() {
+    void createShouldAddTrainingToDatabase() {
         traineeDao.create(trainee);
         trainerDao.create(trainer);
         trainingDao.create(initial);
@@ -83,7 +83,7 @@ class TrainingDaoImplTest {
     }
 
     @Test
-    void select() {
+    void selectShouldReturnTraining() {
         traineeDao.create(trainee);
         trainerDao.create(trainer);
         trainingDao.create(initial);
@@ -94,12 +94,13 @@ class TrainingDaoImplTest {
     }
 
     @Test
-    void selectThrowsTrainingNotFoundException() {
-        assertThrows(TrainingNotFoundException.class, () -> trainingDao.select(0));
+    void selectShouldThrowTrainingNotFoundExceptionWhenNoSuchTraining() {
+        RuntimeException e = assertThrows(TrainingNotFoundException.class, () -> trainingDao.select(0));
+        assertEquals("Training with id 0 was not found", e.getMessage());
     }
 
     @Test
-    void selectAll() {
+    void selectAllShouldReturnAllTrainings() {
         traineeDao.create(trainee);
         trainerDao.create(trainer);
         trainingDao.create(initial);
@@ -138,9 +139,9 @@ class TrainingDaoImplTest {
         cleanUpTrainer(anotherTrainer);
         assertFalse(trainings.isEmpty());
         trainings.forEach(training -> {
-            if (training.getId() == initial.getId()) {
+            if (training.getId().equals(initial.getId())) {
                 assertEquals(initial, training);
-            } else if (training.getId() == another.getId()) {
+            } else if (training.getId().equals(another.getId())) {
                 assertEquals(another, training);
             }
         });

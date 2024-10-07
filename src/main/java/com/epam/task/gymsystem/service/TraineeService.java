@@ -7,6 +7,8 @@ import java.util.Map;
 
 public interface TraineeService extends UserService<Trainee> {
     List<Trainer> selectNotAssignedTrainers(String username);
+
     void updateTrainers(String username, Map<String, Boolean> trainerUsernames);
+
     void delete(String username);
 }

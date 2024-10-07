@@ -5,6 +5,8 @@ import java.util.List;
 
 public interface TrainingDao {
     void create(Training training);
+
     Training select(int trainingId);
+
     List<Training> selectAll();
 }

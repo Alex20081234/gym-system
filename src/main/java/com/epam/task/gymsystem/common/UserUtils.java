@@ -3,22 +3,22 @@ package com.epam.task.gymsystem.common;
 import com.epam.task.gymsystem.domain.Trainee;
 import com.epam.task.gymsystem.domain.Trainer;
 import com.epam.task.gymsystem.domain.User;
-import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Random;
 
-@Component
 public class UserUtils {
-    private final Random random = new Random();
+    private static final Random random = new Random();
+    private static int passwordLength = 10;
+    private static String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-    public void setUsernameAndPassword(User user, List<String> userNames) {
+    private UserUtils() {}
+
+    public static void setUsernameAndPassword(User user, List<String> userNames) {
         user.setUsername(generateUsername(user.getFirstName(), user.getLastName(), userNames));
         user.setPassword(generatePassword());
     }
 
-    private String generatePassword() {
-        int passwordLength = 10;
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static String generatePassword() {
         StringBuilder password = new StringBuilder(passwordLength);
         for (int i = 0; i < passwordLength; i++) {
             int index = random.nextInt(characters.length());
@@ -27,7 +27,7 @@ public class UserUtils {
         return password.toString();
     }
 
-    public String generateUsername(String firstName, String lastName, List<String> userNames) {
+    public static String generateUsername(String firstName, String lastName, List<String> userNames) {
         StringBuilder username = new StringBuilder(firstName + "." + lastName);
         int counter = 0;
         while (exists(username.toString(), userNames)) {
@@ -42,7 +42,7 @@ public class UserUtils {
         return username.toString();
     }
 
-    private boolean exists(String username, List<String> userNames) {
+    private static boolean exists(String username, List<String> userNames) {
         for (String currentUsername : userNames) {
             if (currentUsername != null && currentUsername.equals(username)) {
                 return true;
@@ -51,7 +51,7 @@ public class UserUtils {
         return false;
     }
 
-    public User mergeUsers(User initial, User updates, List<String> userNames) {
+    public static User mergeUsers(User initial, User updates, List<String> userNames) {
         if (updates == null) {
             return initial;
         }
