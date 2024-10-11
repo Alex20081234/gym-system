@@ -1,14 +1,18 @@
 package com.epam.task.gymsystem.service;
 
+import com.epam.task.gymsystem.common.UserUtils;
 import com.epam.task.gymsystem.dao.TrainerDao;
 import com.epam.task.gymsystem.domain.Trainer;
+import com.epam.task.gymsystem.domain.Training;
+import com.epam.task.gymsystem.domain.TrainingCriteria;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.Map;
-import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 public class TrainerServiceImpl implements TrainerService {
+    private static final String NOT_VALID = "Trainer is not valid";
     private final TrainerDao dao;
 
     @Autowired
@@ -17,46 +21,68 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
+    @Transactional
     public void create(Trainer trainer) {
-        UserService.setUsernameAndPassword(trainer, selectAll().get());
+        if (trainer == null) {
+            throw new IllegalArgumentException(NOT_VALID);
+        }
+        UserUtils.setUsernameAndPassword(trainer, dao.selectUsernames());
+        if (!isValid(trainer)) {
+            throw new IllegalArgumentException(NOT_VALID);
+        }
         dao.create(trainer);
     }
 
     @Override
-    public void update(Long userId, Trainer changes) {
-        Optional<Trainer> trainer = dao.select(userId);
-        boolean nameChanged = false;
-        if (changes.getUserId() != null) {
-            trainer.get().setUserId(changes.getUserId());
+    @Transactional
+    public void changePassword(String username, String newPassword) {
+        if (newPassword == null || newPassword.length() < 8 || newPassword.length() > 20) {
+            throw new IllegalArgumentException("New password is not valid");
         }
-        if (changes.getSpecialization() != null) {
-            trainer.get().setSpecialization(changes.getSpecialization());
-        }
-        if (changes.getFirstName() != null) {
-            trainer.get().setFirstName(changes.getFirstName());
-            nameChanged = true;
-        }
-        if (changes.getLastName() != null) {
-            trainer.get().setLastName(changes.getLastName());
-            nameChanged = true;
-        }
-        if (nameChanged) {
-            trainer.get().setUsername(UserService.generateUsername(trainer.get().getFirstName(), trainer.get().getLastName(), selectAll().get()));
-        }
-        if (changes.getPassword() != null) {
-            trainer.get().setPassword(changes.getPassword());
-        }
-        trainer.get().setActive(changes.isActive());
-        dao.update(trainer.get());
+        dao.changePassword(username, newPassword);
     }
 
     @Override
-    public Optional<Trainer> select(Long userId) {
-        return dao.select(userId);
+    @Transactional
+    public void update(String username, Trainer updates) {
+        if (updates == null) {
+            throw new IllegalArgumentException(NOT_VALID);
+        }
+        Trainer trainer = dao.select(username);
+        dao.update(username, (Trainer) UserUtils.mergeUsers(trainer, updates, dao.selectUsernames()));
     }
 
     @Override
-    public Optional<Map<Long, Trainer>> selectAll() {
+    @Transactional
+    public void changeActivityStatus(String username, boolean newActivityStatus) {
+        Trainer trainer = dao.select(username);
+        if (trainer.getIsActive() == newActivityStatus) {
+            throw new IllegalArgumentException("Activity status is already " + newActivityStatus);
+        }
+        dao.changeActivityStatus(username, newActivityStatus);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Training> selectTrainings(String username, TrainingCriteria criteria) {
+        return dao.selectTrainings(dao.select(username), criteria);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Trainer select(String username) {
+        return dao.select(username);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Trainer> selectAll() {
         return dao.selectAll();
+    }
+
+    private boolean isValid(Trainer trainer) {
+        return trainer != null && trainer.getFirstName() != null && trainer.getLastName() != null
+                && trainer.getUsername() != null && trainer.getPassword() != null
+                && trainer.getIsActive() != null && trainer.getSpecialization() != null;
     }
 }

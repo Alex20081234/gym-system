@@ -1,9 +1,12 @@
 package com.epam.task.gymsystem.service;
 
 import com.epam.task.gymsystem.domain.Training;
-import java.util.Optional;
+import java.util.List;
 
 public interface TrainingService {
     void create(Training training);
-    Optional<Training> select(Long id);
+
+    Training select(int id);
+
+    List<Training> selectAll();
 }

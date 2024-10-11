@@ -1,22 +1,38 @@
 package com.epam.task.gymsystem.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import java.time.Duration;
-import java.time.LocalDateTime;
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDate;
 
 @Builder
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
+@Table(name = "Training")
 public class Training {
-    private Long trainingId;
-    private Long traineeId;
-    private Long trainerId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    @ManyToOne
+    @JoinColumn(name = "TraineeId", nullable = false)
+    @EqualsAndHashCode.Include
+    @ToString.Include
+    private Trainee trainee;
+    @ManyToOne
+    @JoinColumn(name = "TrainerId", nullable = false)
+    @EqualsAndHashCode.Include
+    @ToString.Include
+    private Trainer trainer;
+    @Column(name = "TrainingName", nullable = false)
     private String trainingName;
+    @ManyToOne
+    @JoinColumn(name = "TrainingTypeId", nullable = false)
     private TrainingType trainingType;
-    private LocalDateTime trainingDate;
-    private Duration duration;
+    @Column(name = "TrainingDate", nullable = false)
+    private LocalDate trainingDate;
+    @Column(name = "TrainingDuration", nullable = false)
+    private int duration;
 }
