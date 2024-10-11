@@ -32,11 +32,9 @@ public class TrainerDaoImpl implements TrainerDao {
     }
 
     @Override
-    public void update(String username, Trainer updated) {
-        updated.setId(entityManager.createQuery("select id from Trainer where username = :username", Integer.class)
-                .setParameter("username", username)
-                .getSingleResult());
+    public String update(String username, Trainer updated) {
         entityManager.merge(updated);
+        return updated.getUsername();
     }
 
     @Override
@@ -88,6 +86,11 @@ public class TrainerDaoImpl implements TrainerDao {
 
     @Override
     public List<String> selectUsernames() {
-        return entityManager.createQuery("SELECT t.username FROM Trainer t", String.class).getResultList();
+        return entityManager.createQuery("SELECT u.username FROM User u", String.class).getResultList();
+    }
+
+    @Override
+    public void loadDependencies(Trainer trainer) {
+        entityManager.refresh(trainer);
     }
 }

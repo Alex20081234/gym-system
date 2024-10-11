@@ -166,6 +166,40 @@ class TraineeDaoImplTest {
     }
 
     @Test
+    void selectTrainingsShouldReturnEmptyListWhenNoSuitableTrainings() {
+        traineeDao.create(initial);
+        Trainer trainer = Trainer.builder()
+                .username("Test.Trainer")
+                .password("password")
+                .firstName("Test")
+                .lastName("Trainer")
+                .isActive(true)
+                .specialization(entityManager.find(TrainingType.class, 1))
+                .build();
+        trainerDao.create(trainer);
+        Training training = Training.builder()
+                .trainee(initial)
+                .trainer(trainer)
+                .trainingDate(LocalDate.now())
+                .trainingName("Test training")
+                .duration(60)
+                .trainingType(entityManager.find(TrainingType.class, 1))
+                .build();
+        trainingDao.create(training);
+        TrainingCriteria criteria = TrainingCriteria.builder()
+                .fromDate(LocalDate.now().plusDays(1))
+                .toDate(LocalDate.now().minusDays(1))
+                .partnerUsername("Non.Existent")
+                .trainingType(null)
+                .build();
+        List<Training> trainings = traineeDao.selectTrainings(traineeDao.select("Test.Trainee"), criteria);
+        cleanUp("Test.Trainee");
+        cleanTrainer(trainerDao.select("Test.Trainer"));
+        assertNotNull(trainings);
+        assertEquals(0, trainings.size());
+    }
+
+    @Test
     void selectNotAssignedTrainersShouldReturnTrainers() {
         traineeDao.create(initial);
         Trainer trainer = Trainer.builder()
@@ -293,5 +327,27 @@ class TraineeDaoImplTest {
                 assertEquals(another, trainee);
             }
         });
+    }
+
+    @Test
+    void selectUsernamesShouldReturnAllUsernames() {
+        traineeDao.create(initial);
+        Trainee another = Trainee.builder()
+                .username("Test.Trainee2")
+                .password("password")
+                .firstName("Test")
+                .lastName("Trainee2")
+                .isActive(true)
+                .dateOfBirth(LocalDate.of(1990, 1, 1))
+                .address("Test address")
+                .trainings(new ArrayList<>())
+                .trainers(new HashSet<>())
+                .build();
+        traineeDao.create(another);
+        List<String> usernames = traineeDao.selectUsernames();
+        cleanUp("Test.Trainee", "Test.Trainee2");
+        assertNotNull(usernames);
+        assertTrue(usernames.contains("Test.Trainee"));
+        assertTrue(usernames.contains("Test.Trainee2"));
     }
 }

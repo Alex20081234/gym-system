@@ -50,7 +50,7 @@ class TraineeServiceImplTest {
     void createShouldThrowIllegalArgumentExceptionWhenTraineeInvalid() {
         RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.create(null));
         assertEquals("Trainee is not valid", e.getMessage());
-        trainee.setDateOfBirth(null);
+        trainee.setFirstName(null);
         e = assertThrows(IllegalArgumentException.class, () -> service.create(trainee));
         assertEquals("Trainee is not valid", e.getMessage());
     }
@@ -86,7 +86,7 @@ class TraineeServiceImplTest {
                 .trainers(new HashSet<>())
                 .build();
         when(dao.select(anyString())).thenReturn(trainee);
-        doNothing().when(dao).update(any(), any(Trainee.class));
+        when(dao.update(any(), any(Trainee.class))).thenReturn("Updated.Trainee");
         when(dao.selectUsernames()).thenReturn(Collections.emptyList());
         service.update("Test.Trainee", updates);
         verify(dao, times(1)).update("Test.Trainee", updated);

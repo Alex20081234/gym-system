@@ -10,7 +10,7 @@ public interface UserDao<T extends User> {
 
     void changePassword(String username, String newPassword);
 
-    void update(String username, T updated);
+    String update(String username, T updated);
 
     void changeActivityStatus(String username, boolean newActivityStatus);
 
@@ -21,4 +21,6 @@ public interface UserDao<T extends User> {
     List<T> selectAll();
 
     List<String> selectUsernames();
+
+    void loadDependencies(T user);
 }

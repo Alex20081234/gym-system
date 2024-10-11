@@ -5,6 +5,7 @@ import com.epam.task.gymsystem.dao.TrainerDao;
 import com.epam.task.gymsystem.domain.Trainer;
 import com.epam.task.gymsystem.domain.Training;
 import com.epam.task.gymsystem.domain.TrainingCriteria;
+import com.epam.task.gymsystem.dto.UsernameAndPassword;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,15 +23,16 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @Transactional
-    public void create(Trainer trainer) {
+    public UsernameAndPassword create(Trainer trainer) {
         if (trainer == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
-        UserUtils.setUsernameAndPassword(trainer, dao.selectUsernames());
+        UsernameAndPassword usernameAndPassword = UserUtils.setUsernameAndPassword(trainer, dao.selectUsernames());
         if (!isValid(trainer)) {
             throw new IllegalArgumentException(NOT_VALID);
         }
         dao.create(trainer);
+        return usernameAndPassword;
     }
 
     @Override
@@ -44,12 +46,12 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @Transactional
-    public void update(String username, Trainer updates) {
+    public String update(String username, Trainer updates) {
         if (updates == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
         Trainer trainer = dao.select(username);
-        dao.update(username, (Trainer) UserUtils.mergeUsers(trainer, updates, dao.selectUsernames()));
+        return dao.update(username, (Trainer) UserUtils.mergeUsers(trainer, updates, dao.selectUsernames()));
     }
 
     @Override
@@ -78,6 +80,12 @@ public class TrainerServiceImpl implements TrainerService {
     @Transactional(readOnly = true)
     public List<Trainer> selectAll() {
         return dao.selectAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void loadDependencies(Trainer trainer) {
+        dao.loadDependencies(trainer);
     }
 
     private boolean isValid(Trainer trainer) {

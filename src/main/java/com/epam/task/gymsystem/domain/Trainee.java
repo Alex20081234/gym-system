@@ -17,13 +17,13 @@ import java.util.Set;
 @Entity
 @Table(name = "Trainee")
 public class Trainee extends User {
-    @Column(name = "DateOfBirth", nullable = false)
+    @Column(name = "DateOfBirth")
     private LocalDate dateOfBirth;
-    @Column(name = "Address", nullable = false)
+    @Column(name = "Address")
     private String address;
     @OneToMany(mappedBy = "trainee", cascade = CascadeType.REMOVE)
     private List<Training> trainings;
-    @ManyToMany(cascade = CascadeType.REMOVE)
+    @ManyToMany
     @JoinTable(
             name = "trainee_trainer",
             joinColumns = @JoinColumn(name = "trainee_id"),

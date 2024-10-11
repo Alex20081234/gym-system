@@ -87,4 +87,25 @@ class TrainingServiceImplTest {
         assertFalse(trainings.isEmpty());
         assertEquals(2, trainings.size());
     }
+
+    @Test
+    void selectTypeShouldTryToReturnTrainingType() {
+        TrainingType type = TrainingType.builder()
+                        .name("Yoga")
+                                .id(1)
+                                        .build();
+        when(dao.selectType("Yoga")).thenReturn(type);
+        TrainingType found = service.selectType("Yoga");
+        assertEquals(type, found);
+        verify(dao, times(1)).selectType("Yoga");
+    }
+
+    @Test
+    void selectAllTypesShouldTryToReturnAllTrainingTypes() {
+        when(dao.selectAllTypes()).thenReturn(List.of(new TrainingType(), new TrainingType()));
+        List<TrainingType> types = service.selectAllTypes();
+        assertNotNull(types);
+        assertEquals(2, types.size());
+        verify(dao, times(1)).selectAllTypes();
+    }
 }

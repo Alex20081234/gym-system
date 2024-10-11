@@ -2,6 +2,7 @@ package com.epam.task.gymsystem.service;
 
 import com.epam.task.gymsystem.dao.TrainingDao;
 import com.epam.task.gymsystem.domain.Training;
+import com.epam.task.gymsystem.domain.TrainingType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,18 @@ public class TrainingServiceImpl implements TrainingService {
     @Transactional(readOnly = true)
     public List<Training> selectAll() {
         return dao.selectAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TrainingType> selectAllTypes() {
+        return dao.selectAllTypes();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TrainingType selectType(String name) {
+        return dao.selectType(name);
     }
 
     private boolean isValid(Training training) {

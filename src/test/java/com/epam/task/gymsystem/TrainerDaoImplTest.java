@@ -16,6 +16,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -169,6 +171,42 @@ class TrainerDaoImplTest {
     }
 
     @Test
+    void selectTrainingsShouldReturnEmptyListWhenNoSuitableTrainings() {
+        trainerDao.create(initial);
+        Trainee trainee = Trainee.builder()
+                .username("Test.Trainee")
+                .password("password")
+                .firstName("Test")
+                .lastName("User")
+                .isActive(true)
+                .dateOfBirth(LocalDate.of(1990, 1, 1))
+                .address("Test address")
+                .build();
+        traineeDao.create(trainee);
+        Training training = Training.builder()
+                .trainee(trainee)
+                .trainer(initial)
+                .trainingDate(LocalDate.now().minusDays(2))
+                .trainingName("Test training")
+                .duration(60)
+                .trainingType(entityManager.find(TrainingType.class, 1))
+                .build();
+        trainingDao.create(training);
+        TrainingCriteria criteria = TrainingCriteria.builder()
+                .fromDate(LocalDate.now().plusDays(1))
+                .toDate(LocalDate.now().plusDays(2))
+                .partnerUsername("Non.Existent")
+                .trainingType(null)
+                .build();
+        List<Training> trainings;
+        trainings = trainerDao.selectTrainings(trainerDao.select("Test.Trainer"), criteria);
+        cleanUp("Test.Trainer");
+        cleanTrainee("Test.Trainee");
+        assertNotNull(trainings);
+        assertEquals(0, trainings.size());
+    }
+
+    @Test
     void selectShouldReturnTrainer() {
         trainerDao.create(initial);
         Trainer found = trainerDao.select("Test.Trainer");
@@ -208,5 +246,27 @@ class TrainerDaoImplTest {
                 assertEquals(another, trainer);
             }
         });
+    }
+
+    @Test
+    void selectUsernamesShouldReturnAllUsernames() {
+        trainerDao.create(initial);
+        Trainer another = Trainer.builder()
+                .username("Test.Trainer2")
+                .password("password")
+                .firstName("Test")
+                .lastName("Trainer2")
+                .isActive(true)
+                .specialization(entityManager.find(TrainingType.class, 2))
+                .trainings(new ArrayList<>())
+                .trainees(new HashSet<>())
+                .build();
+        trainerDao.create(another);
+        List<String> usernames = trainerDao.selectUsernames();
+        cleanUp("Test.Trainer");
+        cleanUp("Test.Trainer2");
+        assertNotNull(usernames);
+        assertTrue(usernames.contains("Test.Trainer"));
+        assertTrue(usernames.contains("Test.Trainer2"));
     }
 }

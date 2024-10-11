@@ -87,7 +87,7 @@ class TrainerServiceImplTest {
                 .trainees(new HashSet<>())
                 .build();
         when(dao.select(anyString())).thenReturn(trainer);
-        doNothing().when(dao).update(any(), any(Trainer.class));
+        when(dao.update(any(), any(Trainer.class))).thenReturn("Updated.Trainer");
         when(dao.selectUsernames()).thenReturn(Collections.emptyList());
         service.update("Test.Trainer", updates);
         verify(dao, times(1)).update("Test.Trainer", updated);

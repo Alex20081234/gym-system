@@ -146,4 +146,21 @@ class TrainingDaoImplTest {
             }
         });
     }
+
+    @Test
+    void selectTypeShouldReturnTrainingType() {
+        TrainingType type = trainingDao.selectType("Yoga");
+        assertNotNull(type);
+        assertEquals("Yoga", type.getName());
+        assertEquals(1, type.getId());
+    }
+
+    @Test
+    void selectAllTypesShouldReturnAllTrainingTypes() {
+        List<TrainingType> types = trainingDao.selectAllTypes();
+        assertNotNull(types);
+        assertFalse(types.isEmpty());
+        types.forEach(type -> assertNotNull(type.getName()));
+        assertEquals(10, types.size());
+    }
 }

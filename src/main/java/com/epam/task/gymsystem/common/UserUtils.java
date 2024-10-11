@@ -3,6 +3,7 @@ package com.epam.task.gymsystem.common;
 import com.epam.task.gymsystem.domain.Trainee;
 import com.epam.task.gymsystem.domain.Trainer;
 import com.epam.task.gymsystem.domain.User;
+import com.epam.task.gymsystem.dto.UsernameAndPassword;
 import java.util.List;
 import java.util.Random;
 
@@ -13,9 +14,15 @@ public class UserUtils {
 
     private UserUtils() {}
 
-    public static void setUsernameAndPassword(User user, List<String> userNames) {
-        user.setUsername(generateUsername(user.getFirstName(), user.getLastName(), userNames));
-        user.setPassword(generatePassword());
+    public static UsernameAndPassword setUsernameAndPassword(User user, List<String> userNames) {
+        String username = generateUsername(user.getFirstName(), user.getLastName(), userNames);
+        String password = generatePassword();
+        user.setUsername(username);
+        user.setPassword(password);
+        return UsernameAndPassword.builder()
+                .username(username)
+                .password(password)
+                .build();
     }
 
     private static String generatePassword() {

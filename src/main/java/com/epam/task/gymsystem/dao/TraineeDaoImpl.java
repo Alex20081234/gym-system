@@ -31,11 +31,9 @@ public class TraineeDaoImpl implements TraineeDao {
     }
 
     @Override
-    public void update(String username, Trainee updated) {
-        updated.setId(entityManager.createQuery("select id from Trainee where username = :username", Integer.class)
-                .setParameter("username", username)
-                .getSingleResult());
+    public String update(String username, Trainee updated) {
         entityManager.merge(updated);
+        return updated.getUsername();
     }
 
     @Override
@@ -77,7 +75,7 @@ public class TraineeDaoImpl implements TraineeDao {
                 .map(training -> training.getTrainer().getUsername())
                 .toList();
         trainersUsernames.removeAll(assignedTrainersUsernames);
-        return entityManager.createQuery("from Trainer where username in :usernames", Trainer.class)
+        return entityManager.createQuery("from Trainer where username in :usernames and isActive = true", Trainer.class)
                 .setParameter("usernames", trainersUsernames)
                 .getResultList();
     }
@@ -136,6 +134,11 @@ public class TraineeDaoImpl implements TraineeDao {
 
     @Override
     public List<String> selectUsernames() {
-        return entityManager.createQuery("SELECT username FROM Trainee", String.class).getResultList();
+        return entityManager.createQuery("SELECT u.username FROM User u", String.class).getResultList();
+    }
+
+    @Override
+    public void loadDependencies(Trainee trainee) {
+        entityManager.refresh(trainee);
     }
 }

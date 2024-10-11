@@ -3,6 +3,7 @@ package com.epam.task.gymsystem.service;
 import com.epam.task.gymsystem.common.UserUtils;
 import com.epam.task.gymsystem.dao.TraineeDao;
 import com.epam.task.gymsystem.domain.*;
+import com.epam.task.gymsystem.dto.UsernameAndPassword;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,15 +45,16 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Transactional
-    public void create(Trainee trainee) {
+    public UsernameAndPassword create(Trainee trainee) {
         if (trainee == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
-        UserUtils.setUsernameAndPassword(trainee, dao.selectUsernames());
+        UsernameAndPassword usernameAndPassword = UserUtils.setUsernameAndPassword(trainee, dao.selectUsernames());
         if (!isValid(trainee)) {
             throw new IllegalArgumentException(NOT_VALID);
         }
         dao.create(trainee);
+        return usernameAndPassword;
     }
 
     @Override
@@ -66,12 +68,12 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Transactional
-    public void update(String username, Trainee updates) {
+    public String update(String username, Trainee updates) {
         if (updates == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
         Trainee trainee = dao.select(username);
-        dao.update(username, (Trainee) UserUtils.mergeUsers(trainee, updates, dao.selectUsernames()));
+        return dao.update(username, (Trainee) UserUtils.mergeUsers(trainee, updates, dao.selectUsernames()));
     }
 
     @Override
@@ -102,10 +104,15 @@ public class TraineeServiceImpl implements TraineeService {
         return dao.selectAll();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public void loadDependencies(Trainee trainee) {
+        dao.loadDependencies(trainee);
+    }
+
     private boolean isValid(Trainee trainee) {
         return trainee != null && trainee.getUsername() != null && trainee.getPassword() != null
                 && trainee.getFirstName() != null && trainee.getLastName() != null
-                && trainee.getIsActive() != null && trainee.getDateOfBirth() != null
-                && trainee.getAddress() != null;
+                && trainee.getIsActive() != null;
     }
 }
