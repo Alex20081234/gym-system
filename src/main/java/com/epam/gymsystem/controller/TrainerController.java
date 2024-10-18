@@ -47,7 +47,7 @@ public class TrainerController {
 
     @Operation(summary = "Change trainer's login")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Login changed successfully"),
+            @ApiResponse(responseCode = "204", description = "Login changed successfully"),
             @ApiResponse(responseCode = "401", description = "Unauthorized access",
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unauthorized access"))),
@@ -119,7 +119,7 @@ public class TrainerController {
 
     @Operation(summary = "Change activity status of a trainer")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Activity status changed successfully"),
+            @ApiResponse(responseCode = "204", description = "Activity status changed successfully"),
             @ApiResponse(responseCode = "401", description = "Unauthorized access",
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unauthorized access"))),

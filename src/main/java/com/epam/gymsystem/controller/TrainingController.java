@@ -32,7 +32,7 @@ public class TrainingController {
 
     @Operation(summary = "Add a new training")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Training added successfully"),
+            @ApiResponse(responseCode = "204", description = "Training added successfully"),
             @ApiResponse(responseCode = "401", description = "Unauthorized access",
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unauthorized access"))),
