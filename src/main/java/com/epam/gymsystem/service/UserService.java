@@ -1,11 +1,12 @@
 package com.epam.gymsystem.service;
 
 import com.epam.gymsystem.domain.User;
-import com.epam.gymsystem.dto.UsernameAndPassword;
+import com.epam.gymsystem.dto.Credentials;
 import java.util.List;
+import java.util.Optional;
 
 public interface UserService<T extends User> {
-    UsernameAndPassword create(T user);
+    Credentials create(T user);
 
     void changePassword(String username, String newPassword);
 
@@ -13,7 +14,7 @@ public interface UserService<T extends User> {
 
     void changeActivityStatus(String username, boolean newActivityStatus);
 
-    T select(String username);
+    Optional<T> select(String username);
 
     List<T> selectAll();
 

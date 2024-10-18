@@ -55,7 +55,7 @@ class TraineeDaoImplTest {
     @Test
     void createShouldAddTraineeToDatabase() {
         traineeDao.create(initial);
-        Trainee found = traineeDao.select("Test.Trainee");
+        Trainee found = traineeDao.select("Test.Trainee").orElse(null);
         cleanUp("Test.Trainee");
         assertNotNull(found);
         assertEquals(initial, found);
@@ -65,7 +65,7 @@ class TraineeDaoImplTest {
     void changePasswordShouldMakeChangeToDatabase() {
         traineeDao.create(initial);
         traineeDao.changePassword("Test.Trainee", "newpassword");
-        Trainee found = traineeDao.select("Test.Trainee");
+        Trainee found = traineeDao.select("Test.Trainee").orElse(null);
         cleanUp("Test.Trainee");
         assertNotNull(found);
         assertEquals("newpassword", found.getPassword());
@@ -86,7 +86,7 @@ class TraineeDaoImplTest {
                 .trainers(new HashSet<>())
                 .build();
         traineeDao.update("Test.Trainee", updated);
-        Trainee found = traineeDao.select("Updated.Trainee");
+        Trainee found = traineeDao.select("Updated.Trainee").orElse(null);
         cleanUp("Updated.Trainee");
         assertNotNull(found);
         assertEquals(updated, found);
@@ -96,7 +96,7 @@ class TraineeDaoImplTest {
     void changeActivityStatusShouldMakeChangeToDatabase() {
         traineeDao.create(initial);
         traineeDao.changeActivityStatus("Test.Trainee", false);
-        Trainee found = traineeDao.select("Test.Trainee");
+        Trainee found = traineeDao.select("Test.Trainee").orElse(null);
         cleanUp("Test.Trainee");
         assertNotNull(found);
         assertFalse(found.getIsActive());
@@ -127,10 +127,10 @@ class TraineeDaoImplTest {
                 .build();
         trainerDao.create(trainer);
         trainerDao.create(trainer2);
-        List<Trainer> trainers = traineeDao.selectNotAssignedTrainers(traineeDao.select("Test.Trainee"));
+        List<Trainer> trainers = traineeDao.selectNotAssignedTrainers(traineeDao.select("Test.Trainee").orElse(null));
         cleanUp("Test.Trainee");
-        cleanTrainer(trainerDao.select("Test.Trainer"));
-        cleanTrainer(trainerDao.select("Test.Trainer2"));
+        cleanTrainer(trainerDao.select("Test.Trainer").orElse(null));
+        cleanTrainer(trainerDao.select("Test.Trainer2").orElse(null));
         assertNotNull(trainers);
         trainers.forEach(t -> {
             assertTrue(t.getUsername().equals("Test.Trainer") || t.getUsername().equals("Test.Trainer2"));
@@ -140,7 +140,7 @@ class TraineeDaoImplTest {
     @Test
     void selectNotAssignedTrainersShouldReturnNoTrainersWhenNoTrainersExist() {
         traineeDao.create(initial);
-        assertEquals(Collections.emptyList(), traineeDao.selectNotAssignedTrainers(traineeDao.select("Test.Trainee")));
+        assertEquals(Collections.emptyList(), traineeDao.selectNotAssignedTrainers(traineeDao.select("Test.Trainee").orElse(null)));
         cleanUp("Test.Trainee");
     }
 
@@ -159,23 +159,23 @@ class TraineeDaoImplTest {
                 .specialization(trainingType)
                 .build();
         trainerDao.create(trainer);
-        traineeDao.updateTrainers(traineeDao.select("Test.Trainee"), Map.of("Test.Trainer", true));
-        Trainee found = traineeDao.select("Test.Trainee");
+        traineeDao.updateTrainers(traineeDao.select("Test.Trainee").orElse(null), Map.of("Test.Trainer", true));
+        Trainee found = traineeDao.select("Test.Trainee").orElse(null);
         assertNotNull(found);
         found.getTrainers().forEach(t -> {
             assertEquals("Test.Trainer", t.getUsername());
         });
-        traineeDao.updateTrainers(traineeDao.select("Test.Trainee"), Map.of("Test.Trainer", false));
-        found = traineeDao.select("Test.Trainee");
+        traineeDao.updateTrainers(traineeDao.select("Test.Trainee").orElse(null), Map.of("Test.Trainer", false));
+        found = traineeDao.select("Test.Trainee").orElse(null);
         assertTrue(found.getTrainers().isEmpty());
         cleanUp("Test.Trainee");
-        cleanTrainer(trainerDao.select("Test.Trainer"));
+        cleanTrainer(trainerDao.select("Test.Trainer").orElse(null));
     }
 
     @Test
     void updateTrainersShouldThrowUserNotFoundExceptionWhenTrainerIsNonExistent() {
         traineeDao.create(initial);
-        Trainee trainee = traineeDao.select("Test.Trainee");
+        Trainee trainee = traineeDao.select("Test.Trainee").orElse(null);
         Map<String, Boolean> map = Map.of("Nonexistent.Trainer", true);
         RuntimeException e = assertThrows(UserNotFoundException.class, () -> traineeDao.updateTrainers(trainee, map));
         assertEquals("Trainer with username Nonexistent.Trainer was not found", e.getMessage());
@@ -186,23 +186,27 @@ class TraineeDaoImplTest {
     void deleteShouldDeleteTraineeFromDatabase() {
         traineeDao.create(initial);
         traineeDao.delete("Test.Trainee");
-        RuntimeException e = assertThrows(UserNotFoundException.class, () -> traineeDao.select("Test.Trainee"));
-        assertEquals("Trainee with username Test.Trainee was not found", e.getMessage());
+        assertEquals(Optional.empty(), traineeDao.select("Test.Trainee"));
+    }
+
+    @Test
+    void deleteShouldThrowUserNotFoundExceptionWhenUserNonExistent() {
+        RuntimeException e = assertThrows(UserNotFoundException.class, () -> traineeDao.delete("Non.Existent"));
+        assertEquals("Trainee with username Non.Existent was not found", e.getMessage());
     }
 
     @Test
     void selectShouldReturnTrainee() {
         traineeDao.create(initial);
-        Trainee found = traineeDao.select("Test.Trainee");
+        Trainee found = traineeDao.select("Test.Trainee").orElse(null);
         cleanUp("Test.Trainee");
         assertNotNull(found);
         assertEquals(initial, found);
     }
 
     @Test
-    void selectShouldThrowUserNotFoundExceptionWhenTraineeIsNonExistent() {
-        RuntimeException e = assertThrows(UserNotFoundException.class, () -> traineeDao.select("Nonexistent.Trainee"));
-        assertEquals("Trainee with username Nonexistent.Trainee was not found", e.getMessage());
+    void selectShouldReturnEmptyWhenTraineeIsNonExistent() {
+        assertEquals(Optional.empty(), traineeDao.select("Nonexistent.Trainee"));
     }
 
     @Test

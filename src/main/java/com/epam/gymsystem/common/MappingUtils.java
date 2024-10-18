@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MappingUtils {
+public final class MappingUtils {
 
     private MappingUtils() {}
 

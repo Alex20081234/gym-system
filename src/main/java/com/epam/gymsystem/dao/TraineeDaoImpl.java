@@ -6,17 +6,14 @@ import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.common.Dao;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import java.util.*;
 
 @Dao
+@AllArgsConstructor
 public class TraineeDaoImpl implements TraineeDao {
+    private static final String NOT_FOUND = "Trainee with username %s was not found";
     private final EntityManager entityManager;
-
-    @Autowired
-    public TraineeDaoImpl(EntityManager entityManager) {
-        this.entityManager = entityManager;
-    }
 
     @Override
     public void create(Trainee trainee) {
@@ -88,24 +85,27 @@ public class TraineeDaoImpl implements TraineeDao {
 
     @Override
     public void delete(String username) {
-        Trainee trainee = entityManager.createQuery("from Trainee where username = :username", Trainee.class)
-                .setParameter("username", username)
-                .getSingleResult();
-        entityManager.refresh(trainee);
-        entityManager.remove(trainee);
-    }
-
-    @Override
-    public Trainee select(String username) {
         Trainee trainee;
         try {
             trainee = entityManager.createQuery("from Trainee where username = :username", Trainee.class)
                     .setParameter("username", username)
                     .getSingleResult();
         } catch (NoResultException e) {
-            throw new UserNotFoundException("Trainee with username " + username + " was not found");
+            throw new UserNotFoundException(String.format(NOT_FOUND, username));
         }
-        return trainee;
+        entityManager.refresh(trainee);
+        entityManager.remove(trainee);
+    }
+
+    @Override
+    public Optional<Trainee> select(String username) {
+        try {
+            return Optional.ofNullable(entityManager.createQuery("from Trainee where username = :username", Trainee.class)
+                    .setParameter("username", username)
+                    .getSingleResult());
+        } catch (NoResultException e) {
+            return Optional.empty();
+        }
     }
 
     @Override

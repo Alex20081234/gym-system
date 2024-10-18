@@ -1,5 +1,6 @@
 package com.epam.gymsystem.service;
 
+import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.dao.TrainerDaoImpl;
 import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.domain.TrainingType;
@@ -9,10 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.util.CollectionUtils;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -56,7 +54,7 @@ class TrainerServiceImplTest {
     @Test
     void changePasswordShouldTryToMakeChangeToDatabase() {
         doNothing().when(dao).changePassword(any(), anyString());
-        doReturn(trainer).when(dao).select(anyString());
+        doReturn(Optional.of(trainer)).when(dao).select(anyString());
         service.changePassword("Test.Trainer", "newpassword");
         verify(dao, times(1)).changePassword("Test.Trainer", "newpassword");
     }
@@ -82,7 +80,7 @@ class TrainerServiceImplTest {
                 .trainings(new ArrayList<>())
                 .trainees(new HashSet<>())
                 .build();
-        when(dao.select(anyString())).thenReturn(trainer);
+        when(dao.select(anyString())).thenReturn(Optional.of(trainer));
         when(dao.update(any(), any(Trainer.class))).thenReturn("Updated.Trainer");
         when(dao.selectUsernames()).thenReturn(Collections.emptyList());
         service.update("Test.Trainer", updates);
@@ -96,25 +94,37 @@ class TrainerServiceImplTest {
     }
 
     @Test
+    void updateShouldThrowUserNotFoundExceptionWhenUserNonExistent() {
+        RuntimeException e = assertThrows(UserNotFoundException.class, () -> service.update("Non.Existent", new Trainer()));
+        assertEquals("Trainer with username Non.Existent was not found", e.getMessage());
+    }
+
+    @Test
     void changeActivityStatusShouldTryToMakeChangeToDatabase() {
         doNothing().when(dao).changeActivityStatus(any(), anyBoolean());
-        doReturn(trainer).when(dao).select(anyString());
+        doReturn(Optional.of(trainer)).when(dao).select(anyString());
         service.changeActivityStatus("Test.Trainer", false);
         verify(dao, times(1)).changeActivityStatus("Test.Trainer", false);
     }
 
     @Test
     void changeActivityStatusShouldThrowIllegalArgumentExceptionWhenStatusIsAlreadyThat() {
-        doReturn(trainer).when(dao).select(anyString());
+        doReturn(Optional.of(trainer)).when(dao).select(anyString());
         RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.changeActivityStatus("Test.Trainer", true));
         assertEquals("Activity status is already true", e.getMessage());
     }
 
     @Test
+    void changeActivityStatusShouldThrowUserNotFoundExceptionWhenUserNonExistent() {
+        RuntimeException e = assertThrows(UserNotFoundException.class, () -> service.changeActivityStatus("Non.Existent", true));
+        assertEquals("Trainer with username Non.Existent was not found", e.getMessage());
+    }
+
+    @Test
     void selectShouldTryToReturnTrainer() {
         trainer.setUsername("Test.Trainer");
-        when(dao.select(anyString())).thenReturn(trainer);
-        Trainer found = service.select("Test.Trainer");
+        when(dao.select(anyString())).thenReturn(Optional.of(trainer));
+        Trainer found = service.select("Test.Trainer").orElse(null);
         assertNotNull(found);
         assertEquals("Test.Trainer", found.getUsername());
     }

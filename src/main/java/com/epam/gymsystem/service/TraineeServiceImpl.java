@@ -1,30 +1,29 @@
 package com.epam.gymsystem.service;
 
+import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.common.UserUtils;
 import com.epam.gymsystem.dao.TraineeDao;
 import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
-import com.epam.gymsystem.dto.UsernameAndPassword;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.epam.gymsystem.dto.Credentials;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class TraineeServiceImpl implements TraineeService {
     private static final String NOT_VALID = "Trainee is not valid";
+    private static final String NOT_FOUND = "Trainee with username %s was not found";
     private final TraineeDao dao;
-
-    @Autowired
-    public TraineeServiceImpl(TraineeDao dao) {
-        this.dao = dao;
-    }
 
     @Override
     @Transactional(readOnly = true)
     public List<Trainer> selectNotAssignedTrainers(String username) {
-        Trainee trainee = dao.select(username);
+        Trainee trainee = dao.select(username).orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, username)));
         return dao.selectNotAssignedTrainers(trainee);
     }
 
@@ -34,7 +33,7 @@ public class TraineeServiceImpl implements TraineeService {
         if (trainerUsernames == null) {
             throw new IllegalArgumentException("Trainers are not valid");
         }
-        Trainee trainee = dao.select(username);
+        Trainee trainee = dao.select(username).orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, username)));
         dao.updateTrainers(trainee, trainerUsernames);
     }
 
@@ -46,11 +45,11 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Transactional
-    public UsernameAndPassword create(Trainee trainee) {
+    public Credentials create(Trainee trainee) {
         if (trainee == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
-        UsernameAndPassword usernameAndPassword = UserUtils.setUsernameAndPassword(trainee, dao.selectUsernames());
+        Credentials usernameAndPassword = UserUtils.setUsernameAndPassword(trainee, dao.selectUsernames());
         if (!isValid(trainee)) {
             throw new IllegalArgumentException(NOT_VALID);
         }
@@ -73,14 +72,14 @@ public class TraineeServiceImpl implements TraineeService {
         if (updates == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
-        Trainee trainee = dao.select(username);
+        Trainee trainee = dao.select(username).orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, username)));
         return dao.update(username, (Trainee) UserUtils.mergeUsers(trainee, updates, dao.selectUsernames()));
     }
 
     @Override
     @Transactional
     public void changeActivityStatus(String username, boolean newActivityStatus) {
-        Trainee trainee = dao.select(username);
+        Trainee trainee = dao.select(username).orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, username)));
         if (trainee.getIsActive() == newActivityStatus) {
             throw new IllegalArgumentException("Activity status is already " + newActivityStatus);
         }
@@ -89,7 +88,7 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Transactional(readOnly = true)
-    public Trainee select(String username) {
+    public Optional<Trainee> select(String username) {
         return dao.select(username);
     }
 

@@ -3,23 +3,23 @@ package com.epam.gymsystem.common;
 import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.domain.User;
-import com.epam.gymsystem.dto.UsernameAndPassword;
+import com.epam.gymsystem.dto.Credentials;
 import java.util.List;
 import java.util.Random;
 
-public class UserUtils {
+public final class UserUtils {
     private static final Random RANDOM = new Random();
     private static final int PASSWORD_LENGTH = 10;
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     private UserUtils() {}
 
-    public static UsernameAndPassword setUsernameAndPassword(User user, List<String> userNames) {
+    public static Credentials setUsernameAndPassword(User user, List<String> userNames) {
         String username = generateUsername(user.getFirstName(), user.getLastName(), userNames);
         String password = generatePassword();
         user.setUsername(username);
         user.setPassword(password);
-        return UsernameAndPassword.builder()
+        return Credentials.builder()
                 .username(username)
                 .password(password)
                 .build();

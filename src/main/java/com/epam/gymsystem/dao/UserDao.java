@@ -2,6 +2,7 @@ package com.epam.gymsystem.dao;
 
 import com.epam.gymsystem.domain.User;
 import java.util.List;
+import java.util.Optional;
 
 public interface UserDao<T extends User> {
     void create(T user);
@@ -12,7 +13,7 @@ public interface UserDao<T extends User> {
 
     void changeActivityStatus(String username, boolean newActivityStatus);
 
-    T select(String username);
+    Optional<T> select(String username);
 
     List<T> selectAll();
 

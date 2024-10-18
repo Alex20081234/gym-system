@@ -14,8 +14,8 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import java.util.Optional;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -54,7 +54,7 @@ class TrainerControllerTest {
                         .id(100)
                         .build())
                 .build();
-        UsernameAndPassword expectedResponse = UsernameAndPassword.builder()
+        Credentials expectedResponse = Credentials.builder()
                 .username("Test.User")
                 .password("password")
                 .build();
@@ -76,7 +76,7 @@ class TrainerControllerTest {
         mockMvc.perform(put("/trainers/login/Test.User")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(passwords)))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 
     @Test
@@ -106,12 +106,19 @@ class TrainerControllerTest {
                         .id(100)
                         .build())
                 .build();
-        when(trainerService.select("Test.User")).thenReturn(trainer);
+        when(trainerService.select("Test.User")).thenReturn(Optional.of(trainer));
         mockMvc.perform(get("/trainers/Test.User"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"firstName\":\"Test\",\"lastName\":\"User\"" +
                         ",\"specialization\":{\"name\":\"Boxing\",\"id\":100}" +
                         ",\"isActive\":true,\"trainees\":[]}"));
+    }
+
+    @Test
+    void getTrainerShouldReturnNotFoundWhenUserNonExistent() throws Exception {
+        mockMvc.perform(get("/trainers/Non.Existent"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Trainer with username Non.Existent was not found"));
     }
 
     @Test
@@ -137,7 +144,7 @@ class TrainerControllerTest {
                         .build())
                 .build();
         when(trainerService.update(eq("Test.User"), any())).thenReturn("Updated.User");
-        when(trainerService.select("Updated.User")).thenReturn(updated);
+        when(trainerService.select("Updated.User")).thenReturn(Optional.of(updated));
         mockMvc.perform(put("/trainers/profile/Test.User")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(requestTrainer)))
@@ -150,9 +157,28 @@ class TrainerControllerTest {
     }
 
     @Test
+    void updateTrainerShouldReturnNotFoundWhenUserNonExistent() throws Exception {
+        ExtendedRequestTrainer requestTrainer = ExtendedRequestTrainer.builder()
+                .firstName("Updated")
+                .lastName("NonExistent")
+                .specialization(ShortTrainingType.builder()
+                        .name("Boxing")
+                        .id(100)
+                        .build())
+                .isActive("true")
+                .build();
+        when(trainerService.update(anyString(), any())).thenReturn("Updated.NonExistent");
+        mockMvc.perform(put("/trainers/profile/Test.User")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(requestTrainer)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Trainer with username Updated.NonExistent was not found"));
+    }
+
+    @Test
     void changeActivityStatusShouldTryToChangeStatus() throws Exception {
         doNothing().when(trainerService).changeActivityStatus("Test.User", false);
         mockMvc.perform(patch("/trainers/activity-status/Test.User?isActive=false"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 }

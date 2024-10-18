@@ -1,23 +1,22 @@
 package com.epam.gymsystem.service;
 
+import com.epam.gymsystem.dao.TrainingTypeDao;
 import com.epam.gymsystem.domain.Training;
 import com.epam.gymsystem.domain.TrainingCriteria;
 import com.epam.gymsystem.domain.TrainingType;
 import com.epam.gymsystem.dao.TrainingDao;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class TrainingServiceImpl implements TrainingService {
     private static final String NOT_VALID = "Training is not valid";
     private final TrainingDao dao;
-
-    @Autowired
-    public TrainingServiceImpl(TrainingDao dao) {
-        this.dao = dao;
-    }
+    private final TrainingTypeDao typeDao;
 
     @Override
     @Transactional
@@ -30,7 +29,7 @@ public class TrainingServiceImpl implements TrainingService {
 
     @Override
     @Transactional(readOnly = true)
-    public Training select(int id) {
+    public Optional<Training> select(int id) {
         return dao.select(id);
     }
 
@@ -43,13 +42,13 @@ public class TrainingServiceImpl implements TrainingService {
     @Override
     @Transactional(readOnly = true)
     public List<TrainingType> selectAllTypes() {
-        return dao.selectAllTypes();
+        return typeDao.selectAllTypes();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public TrainingType selectType(String name) {
-        return dao.selectType(name);
+    public Optional<TrainingType> selectType(String name) {
+        return typeDao.selectType(name);
     }
 
     @Override

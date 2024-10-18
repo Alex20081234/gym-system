@@ -1,7 +1,6 @@
 package com.epam.gymsystem.controller;
 
 import com.epam.gymsystem.common.AccessDeniedRuntimeException;
-import com.epam.gymsystem.common.TrainingObjectNotFoundException;
 import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.dto.Passwords;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,14 +45,6 @@ class GlobalExceptionHandlerTest {
         mockMvc.perform(get("/trainees/Non.Existent"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Trainee with username Non.Existent was not found"));
-    }
-
-    @Test
-    void handleTrainingObjectNotFoundExceptionShouldProcessTrainingObjectNotFoundException() throws Exception {
-        when(trainingController.getTrainings(anyString(), any(), any(), any(), any())).thenThrow(new TrainingObjectNotFoundException("Training not found"));
-        mockMvc.perform(get("/trainings/Test.User"))
-                .andExpect(status().isNotFound())
-                .andExpect(content().string("Training not found"));
     }
 
     @Test

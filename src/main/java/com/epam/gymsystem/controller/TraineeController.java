@@ -1,12 +1,13 @@
 package com.epam.gymsystem.controller;
 
+import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.dto.*;
 import com.epam.gymsystem.service.AuthService;
 import com.epam.gymsystem.common.MappingUtils;
 import com.epam.gymsystem.service.TraineeService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,21 +24,17 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/trainees")
+@AllArgsConstructor
 public class TraineeController {
+    private static final String NOT_FOUND = "Trainee with username %s was not found";
     private final TraineeService traineeService;
     private final AuthService authService;
-
-    @Autowired
-    public TraineeController(TraineeService traineeService, AuthService authService) {
-        this.traineeService = traineeService;
-        this.authService = authService;
-    }
 
     @Operation(summary = "Register a new trainee")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Trainee registered successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = UsernameAndPassword.class))),
+                            schema = @Schema(implementation = Credentials.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input",
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Invalid input data"))),
@@ -46,9 +43,9 @@ public class TraineeController {
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
     @PostMapping
-    public ResponseEntity<UsernameAndPassword> registerTrainee(@RequestBody RequestTrainee requestTrainee) {
+    public ResponseEntity<Credentials> registerTrainee(@RequestBody RequestTrainee requestTrainee) {
         Trainee trainee = MappingUtils.fromRequestTraineeToTrainee(requestTrainee);
-        UsernameAndPassword usernameAndPassword = traineeService.create(trainee);
+        Credentials usernameAndPassword = traineeService.create(trainee);
         return ResponseEntity.created(URI.create("/trainees/" + usernameAndPassword.getUsername()))
                 .body(usernameAndPassword);
     }
@@ -74,7 +71,7 @@ public class TraineeController {
         } else {
             throw new IllegalArgumentException("Incorrect password");
         }
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Get trainee details")
@@ -94,7 +91,8 @@ public class TraineeController {
     })
     @GetMapping("/{username}")
     public ResponseEntity<ResponseTrainee> getTrainee(@PathVariable String username) {
-        Trainee trainee = traineeService.select(username);
+        Trainee trainee = traineeService.select(username)
+                .orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, username)));
         return ResponseEntity.ok(MappingUtils.fromTraineeToResponseTrainee(trainee));
     }
 
@@ -118,7 +116,8 @@ public class TraineeController {
                                                                      @RequestBody ExtendedRequestTrainee extendedRequestTrainee) {
         Trainee trainee = MappingUtils.fromExtendedRequestTraineeToTrainee(extendedRequestTrainee);
         String newUsername = traineeService.update(username, trainee);
-        Trainee updatedTrainee = traineeService.select(newUsername);
+        Trainee updatedTrainee = traineeService.select(newUsername)
+                .orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, newUsername)));
         return ResponseEntity.ok(MappingUtils.fromTraineeToResponseTraineeWithUsername(updatedTrainee));
     }
 
@@ -138,7 +137,7 @@ public class TraineeController {
     @DeleteMapping("/{username}")
     public ResponseEntity<Void> deleteTrainee(@PathVariable String username) {
         traineeService.delete(username);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Get not assigned trainers for a trainee")
@@ -183,9 +182,10 @@ public class TraineeController {
         Map<String, Boolean> updates = new HashMap<>();
         pairs.forEach(pair -> updates.put(pair.getUsername(), pair.getRequired()));
         traineeService.updateTrainers(username, updates);
-        Trainee trainee = traineeService.select(username);
+        Trainee trainee = traineeService.select(username)
+                .orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, username)));
         traineeService.loadDependencies(trainee);
-        if (trainee.getTrainers() != null) {
+        if (trainee.getTrainers() != null && !trainee.getTrainers().isEmpty()) {
             return ResponseEntity.ok(trainee.getTrainers().stream().map(MappingUtils::fromTrainerToShortTrainer).toList());
         }
         return ResponseEntity.ok(new ArrayList<>());
@@ -207,6 +207,6 @@ public class TraineeController {
     @PatchMapping("/activity-status/{username}")
     public ResponseEntity<Void> changeActivityStatus(@PathVariable String username, @RequestParam Boolean isActive) {
         traineeService.changeActivityStatus(username, isActive);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 }

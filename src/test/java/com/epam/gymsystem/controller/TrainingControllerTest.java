@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -77,13 +78,37 @@ class TrainingControllerTest {
                         .name("Boxing")
                         .build())
                 .build();
-        when(trainerService.select("Test.Trainer")).thenReturn(trainer);
-        when(traineeService.select("Test.Trainee")).thenReturn(trainee);
+        when(trainerService.select("Test.Trainer")).thenReturn(Optional.of(trainer));
+        when(traineeService.select("Test.Trainee")).thenReturn(Optional.of(trainee));
         doNothing().when(trainingService).create(any());
         mockMvc.perform(post("/trainings/Test.Trainee")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(mapper.writeValueAsString(training)))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void addTrainingShouldReturnNotFoundWhenEitherPartnerNonExistent() throws Exception {
+        RequestTraining requestTraining = RequestTraining.builder()
+                .traineeUsername("Non.Existent")
+                .trainerUsername("Test.Trainer")
+                .name("Boxing practise")
+                .date("2024-10-17")
+                .duration(60)
+                .build();
+        mockMvc.perform(post("/trainings/Non.Existent")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(mapper.writeValueAsString(requestTraining)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("User with username Non.Existent was not found"));
+        requestTraining.setTraineeUsername("Test.User");
+        requestTraining.setTrainerUsername("Non.Existent");
+        when(traineeService.select("Test.User")).thenReturn(Optional.of(new Trainee()));
+        mockMvc.perform(post("/trainings/Test.User")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(requestTraining)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("User with username Non.Existent was not found"));
     }
 
     @Test

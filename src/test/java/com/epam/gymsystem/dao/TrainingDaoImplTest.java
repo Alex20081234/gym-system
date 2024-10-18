@@ -1,6 +1,5 @@
 package com.epam.gymsystem.dao;
 
-import com.epam.gymsystem.common.TrainingObjectNotFoundException;
 import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.configuration.GymSystemConfiguration;
 import com.epam.gymsystem.domain.*;
@@ -15,6 +14,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
@@ -75,7 +75,7 @@ class TrainingDaoImplTest {
         traineeDao.create(trainee);
         trainerDao.create(trainer);
         trainingDao.create(initial);
-        Training found = trainingDao.select(initial.getId());
+        Training found = trainingDao.select(initial.getId()).orElse(null);
         cleanUpTrainee("Test.Trainee");
         cleanUpTrainer(trainer);
         assertEquals(initial, found);
@@ -86,16 +86,15 @@ class TrainingDaoImplTest {
         traineeDao.create(trainee);
         trainerDao.create(trainer);
         trainingDao.create(initial);
-        Training found = trainingDao.select(initial.getId());
+        Training found = trainingDao.select(initial.getId()).orElse(null);
         cleanUpTrainee("Test.Trainee");
         cleanUpTrainer(trainer);
         assertEquals(initial, found);
     }
 
     @Test
-    void selectShouldThrowTrainingObjectNotFoundExceptionWhenNoSuchTraining() {
-        RuntimeException e = assertThrows(TrainingObjectNotFoundException.class, () -> trainingDao.select(0));
-        assertEquals("Training with id 0 was not found", e.getMessage());
+    void selectShouldReturnEmptyWhenNoSuchTraining() {
+        assertEquals(Optional.empty(), trainingDao.select(0));
     }
 
     @Test
@@ -147,29 +146,6 @@ class TrainingDaoImplTest {
     }
 
     @Test
-    void selectTypeShouldReturnTrainingType() {
-        TrainingType type = trainingDao.selectType("Yoga");
-        assertNotNull(type);
-        assertEquals("Yoga", type.getName());
-        assertEquals(1, type.getId());
-    }
-
-    @Test
-    void selectAllTypesShouldReturnAllTrainingTypes() {
-        List<TrainingType> types = trainingDao.selectAllTypes();
-        assertNotNull(types);
-        assertFalse(types.isEmpty());
-        types.forEach(type -> assertNotNull(type.getName()));
-        assertEquals(10, types.size());
-    }
-
-    @Test
-    void selectTypesShouldThrowTrainingObjectNotFoundExceptionWhenTypeNonExistent() {
-        RuntimeException e = assertThrows(TrainingObjectNotFoundException.class, () -> trainingDao.selectType("Non Existent"));
-        assertEquals("Training type with name Non Existent was not found", e.getMessage());
-    }
-
-    @Test
     void selectTrainingsShouldReturnTrainings() {
         traineeDao.create(trainee);
         trainerDao.create(trainer);
@@ -190,7 +166,7 @@ class TrainingDaoImplTest {
                 .build();
         List<Training> trainings = trainingDao.selectTrainings("Test.Trainee", criteria);
         cleanUpTrainee("Test.Trainee");
-        cleanUpTrainer(trainerDao.select("Test.Trainer"));
+        cleanUpTrainer(trainerDao.select("Test.Trainer").orElse(null));
         assertNotNull(trainings);
         assertEquals(1, trainings.size());
     }
@@ -212,7 +188,7 @@ class TrainingDaoImplTest {
         assertNotNull(trainings);
         assertEquals(1, trainings.size());
         cleanUpTrainee("Test.Trainee");
-        cleanUpTrainer(trainerDao.select("Test.Trainer"));
+        cleanUpTrainer(trainerDao.select("Test.Trainer").orElse(null));
     }
 
     @Test
@@ -236,7 +212,7 @@ class TrainingDaoImplTest {
                 .build();
         List<Training> trainings = trainingDao.selectTrainings("Test.Trainer", criteria);
         cleanUpTrainee("Test.Trainee");
-        cleanUpTrainer(trainerDao.select("Test.Trainer"));
+        cleanUpTrainer(trainerDao.select("Test.Trainer").orElse(null));
         assertNotNull(trainings);
         assertEquals(0, trainings.size());
     }

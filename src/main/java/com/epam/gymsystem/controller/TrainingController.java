@@ -1,6 +1,7 @@
 package com.epam.gymsystem.controller;
 
 import com.epam.gymsystem.common.MappingUtils;
+import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.domain.*;
 import com.epam.gymsystem.dto.ResponseTraining;
 import com.epam.gymsystem.service.TrainingService;
@@ -8,7 +9,7 @@ import com.epam.gymsystem.dto.RequestTraining;
 import com.epam.gymsystem.dto.ShortTrainingType;
 import com.epam.gymsystem.service.TraineeService;
 import com.epam.gymsystem.service.TrainerService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,17 +23,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/trainings")
+@AllArgsConstructor
 public class TrainingController {
+    private static final String USER_NOT_FOUND = "User with username %s was not found";
     private final TrainingService trainingService;
     private final TrainerService trainerService;
     private final TraineeService traineeService;
-
-    @Autowired
-    public TrainingController(TrainingService trainingService, TrainerService trainerService, TraineeService traineeService) {
-        this.trainingService = trainingService;
-        this.trainerService = trainerService;
-        this.traineeService = traineeService;
-    }
 
     @Operation(summary = "Add a new training")
     @ApiResponses(value = {
@@ -50,14 +46,16 @@ public class TrainingController {
     @PostMapping("/{username}")
     public ResponseEntity<Void> addTraining(@PathVariable String username,
                                             @RequestBody RequestTraining requestTraining) {
-        Trainer trainer = trainerService.select(requestTraining.getTrainerUsername());
-        Trainee trainee = traineeService.select(requestTraining.getTraineeUsername());
+        Trainee trainee = traineeService.select(requestTraining.getTraineeUsername())
+                .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND, requestTraining.getTraineeUsername())));
+        Trainer trainer = trainerService.select(requestTraining.getTrainerUsername())
+                .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND, requestTraining.getTrainerUsername())));
         Training training = MappingUtils.fromRequestTrainingToTraining(requestTraining);
         training.setTrainer(trainer);
         training.setTrainee(trainee);
         training.setTrainingType(trainer.getSpecialization());
         trainingService.create(training);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Get all training types")
@@ -106,7 +104,7 @@ public class TrainingController {
                 .fromDate(startDate == null ? null : LocalDate.parse(startDate))
                 .toDate(endDate == null ? null : LocalDate.parse(endDate))
                 .partnerUsername(partnerName)
-                .trainingType(typeName == null ? null : trainingService.selectType(typeName))
+                .trainingType(typeName == null ? null : trainingService.selectType(typeName).orElse(null))
                 .build();
         List<Training> trainings = trainingService.selectTrainings(username, criteria);
         return ResponseEntity.ok(trainings.stream()

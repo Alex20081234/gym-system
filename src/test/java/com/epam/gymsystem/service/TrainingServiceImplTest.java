@@ -1,6 +1,7 @@
 package com.epam.gymsystem.service;
 
 import com.epam.gymsystem.dao.TrainingDaoImpl;
+import com.epam.gymsystem.dao.TrainingTypeDaoImpl;
 import com.epam.gymsystem.domain.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,12 +12,15 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class TrainingServiceImplTest {
     @Mock
     private TrainingDaoImpl dao;
+    @Mock
+    private TrainingTypeDaoImpl typeDao;
     @InjectMocks
     private TrainingServiceImpl service;
     private final Trainee trainee = Trainee.builder()
@@ -70,8 +74,8 @@ class TrainingServiceImplTest {
 
     @Test
     void selectShouldTryToReturnTraining() {
-        when(dao.select(1)).thenReturn(initial);
-        Training actual = service.select(1);
+        when(dao.select(1)).thenReturn(Optional.of(initial));
+        Training actual = service.select(1).orElse(null);
         assertEquals(initial, actual);
     }
 
@@ -90,19 +94,19 @@ class TrainingServiceImplTest {
                         .name("Yoga")
                                 .id(1)
                                         .build();
-        when(dao.selectType("Yoga")).thenReturn(type);
-        TrainingType found = service.selectType("Yoga");
+        when(typeDao.selectType("Yoga")).thenReturn(Optional.of(type));
+        TrainingType found = service.selectType("Yoga").orElse(null);
         assertEquals(type, found);
-        verify(dao, times(1)).selectType("Yoga");
+        verify(typeDao, times(1)).selectType("Yoga");
     }
 
     @Test
     void selectAllTypesShouldTryToReturnAllTrainingTypes() {
-        when(dao.selectAllTypes()).thenReturn(List.of(new TrainingType(), new TrainingType()));
+        when(typeDao.selectAllTypes()).thenReturn(List.of(new TrainingType(), new TrainingType()));
         List<TrainingType> types = service.selectAllTypes();
         assertNotNull(types);
         assertEquals(2, types.size());
-        verify(dao, times(1)).selectAllTypes();
+        verify(typeDao, times(1)).selectAllTypes();
     }
 
     @Test

@@ -1,6 +1,5 @@
 package com.epam.gymsystem.dao;
 
-import com.epam.gymsystem.common.TrainingObjectNotFoundException;
 import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.domain.*;
 import com.epam.gymsystem.common.Dao;
@@ -10,16 +9,15 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import lombok.AllArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Dao
+@AllArgsConstructor
 public class TrainingDaoImpl implements TrainingDao {
     private final EntityManager entityManager;
-
-    public TrainingDaoImpl(EntityManager entityManager) {
-        this.entityManager = entityManager;
-    }
 
     @Override
     public void create(Training training) {
@@ -27,39 +25,19 @@ public class TrainingDaoImpl implements TrainingDao {
     }
 
     @Override
-    public Training select(int trainingId) {
-        Training training;
+    public Optional<Training> select(int trainingId) {
         try {
-            training = entityManager.createQuery("SELECT t FROM Training t WHERE t.id = :id", Training.class)
+            return Optional.ofNullable(entityManager.createQuery("SELECT t FROM Training t WHERE t.id = :id", Training.class)
                     .setParameter("id", trainingId)
-                    .getSingleResult();
+                    .getSingleResult());
         } catch (NoResultException e) {
-            throw new TrainingObjectNotFoundException("Training with id " + trainingId + " was not found");
+            return Optional.empty();
         }
-        return training;
     }
 
     @Override
     public List<Training> selectAll() {
         return entityManager.createQuery("SELECT t FROM Training t", Training.class).getResultList();
-    }
-
-    @Override
-    public List<TrainingType> selectAllTypes() {
-        return entityManager.createQuery("SELECT t FROM TrainingType t", TrainingType.class).getResultList();
-    }
-
-    @Override
-    public TrainingType selectType(String name) {
-        TrainingType trainingType;
-        try {
-            trainingType = entityManager.createQuery("SELECT t FROM TrainingType t WHERE t.name = :name", TrainingType.class)
-                    .setParameter("name", name)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            throw new TrainingObjectNotFoundException("Training type with name " + name + " was not found");
-        }
-        return trainingType;
     }
 
     @Override

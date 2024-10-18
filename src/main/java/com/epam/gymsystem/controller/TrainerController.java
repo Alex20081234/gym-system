@@ -1,11 +1,12 @@
 package com.epam.gymsystem.controller;
 
 import com.epam.gymsystem.common.MappingUtils;
+import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.dto.*;
 import com.epam.gymsystem.service.AuthService;
 import com.epam.gymsystem.service.TrainerService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,21 +19,17 @@ import java.net.URI;
 
 @RestController
 @RequestMapping("/trainers")
+@AllArgsConstructor
 public class TrainerController {
+    private static final String NOT_FOUND = "Trainer with username %s was not found";
     private final TrainerService trainerService;
     private final AuthService authService;
-
-    @Autowired
-    public TrainerController(TrainerService trainerService, AuthService authService) {
-        this.trainerService = trainerService;
-        this.authService = authService;
-    }
 
     @Operation(summary = "Register a new trainer")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Trainer registered successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = UsernameAndPassword.class))),
+                            schema = @Schema(implementation = Credentials.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input",
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Invalid input data"))),
@@ -41,9 +38,9 @@ public class TrainerController {
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
     @PostMapping
-    public ResponseEntity<UsernameAndPassword> registerTrainer(@RequestBody RequestTrainer requestTrainer) {
+    public ResponseEntity<Credentials> registerTrainer(@RequestBody RequestTrainer requestTrainer) {
         Trainer trainer = MappingUtils.fromRequestTrainerToTrainer(requestTrainer);
-        UsernameAndPassword usernameAndPassword = trainerService.create(trainer);
+        Credentials usernameAndPassword = trainerService.create(trainer);
         return ResponseEntity.created(URI.create("/trainers/" + usernameAndPassword.getUsername()))
                 .body(usernameAndPassword);
     }
@@ -70,7 +67,7 @@ public class TrainerController {
         } else {
             throw new IllegalArgumentException("Incorrect password");
         }
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Get trainer details")
@@ -90,7 +87,8 @@ public class TrainerController {
     })
     @GetMapping("/{username}")
     public ResponseEntity<ResponseTrainer> getTrainer(@PathVariable String username) {
-        Trainer trainer = trainerService.select(username);
+        Trainer trainer = trainerService.select(username)
+                .orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, username)));
         return ResponseEntity.ok(MappingUtils.fromTrainerToResponseTrainer(trainer));
     }
 
@@ -114,7 +112,8 @@ public class TrainerController {
                                                                      @RequestBody ExtendedRequestTrainer extendedRequestTrainer) {
         Trainer trainer = MappingUtils.fromExtendedRequestTrainerToTrainer(extendedRequestTrainer);
         String newUsername = trainerService.update(username, trainer);
-        Trainer updatedTrainer = trainerService.select(newUsername);
+        Trainer updatedTrainer = trainerService.select(newUsername)
+                .orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, newUsername)));
         return ResponseEntity.ok(MappingUtils.fromTrainerToResponseTrainerWithUsername(updatedTrainer));
     }
 
@@ -134,6 +133,6 @@ public class TrainerController {
     @PatchMapping("/activity-status/{username}")
     public ResponseEntity<Void> changeActivityStatus(@PathVariable String username, @RequestParam Boolean isActive) {
         trainerService.changeActivityStatus(username, isActive);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 }

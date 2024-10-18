@@ -1,5 +1,6 @@
 package com.epam.gymsystem.service;
 
+import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.dao.TraineeDaoImpl;
 import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
@@ -55,7 +56,7 @@ class TraineeServiceImplTest {
     @Test
     void changePasswordShouldTryToMakeChangeToDatabase() {
         doNothing().when(dao).changePassword(any(), anyString());
-        doReturn(trainee).when(dao).select(anyString());
+        doReturn(Optional.of(trainee)).when(dao).select(anyString());
         service.changePassword("Test.Trainee", "newpassword");
         verify(dao, times(1)).changePassword("Test.Trainee", "newpassword");
     }
@@ -82,7 +83,7 @@ class TraineeServiceImplTest {
                 .trainings(new ArrayList<>())
                 .trainers(new HashSet<>())
                 .build();
-        when(dao.select(anyString())).thenReturn(trainee);
+        when(dao.select(anyString())).thenReturn(Optional.of(trainee));
         when(dao.update(any(), any(Trainee.class))).thenReturn("Updated.Trainee");
         when(dao.selectUsernames()).thenReturn(Collections.emptyList());
         service.update("Test.Trainee", updates);
@@ -96,33 +97,51 @@ class TraineeServiceImplTest {
     }
 
     @Test
+    void updateShouldThrowUserNotFoundExceptionWhenUserNonExistent() {
+        RuntimeException e = assertThrows(UserNotFoundException.class, () -> service.update("Non.Existent", new Trainee()));
+        assertEquals("Trainee with username Non.Existent was not found", e.getMessage());
+    }
+
+    @Test
     void changeActivityStatusShouldTryToMakeChangeToDatabase() {
         doNothing().when(dao).changeActivityStatus(any(), anyBoolean());
-        doReturn(trainee).when(dao).select(anyString());
+        doReturn(Optional.of(trainee)).when(dao).select(anyString());
         service.changeActivityStatus("Test.Trainee", false);
         verify(dao, times(1)).changeActivityStatus("Test.Trainee", false);
     }
 
     @Test
     void changeActivityStatusShouldThrowIllegalArgumentExceptionWhenStatusIsAlreadyThat() {
-        doReturn(trainee).when(dao).select(anyString());
+        doReturn(Optional.of(trainee)).when(dao).select(anyString());
         RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.changeActivityStatus("Test.Trainee", true));
         assertEquals("Activity status is already true", e.getMessage());
     }
 
     @Test
+    void changeActivityStatusShouldThrowUserNotFoundExceptionWhenUserNonExistent() {
+        RuntimeException e = assertThrows(UserNotFoundException.class, () -> service.changeActivityStatus("Non.Existent", true));
+        assertEquals("Trainee with username Non.Existent was not found", e.getMessage());
+    }
+
+    @Test
     void selectNotAssignedTrainersShouldTryToReturnTrainers() {
         when(dao.selectNotAssignedTrainers(any())).thenReturn(List.of(new Trainer()));
-        when(dao.select(anyString())).thenReturn(trainee);
+        when(dao.select(anyString())).thenReturn(Optional.of(trainee));
         List<Trainer> trainers = service.selectNotAssignedTrainers("Test.Trainee");
         assertNotNull(trainers);
         assertFalse(trainers.isEmpty());
     }
 
     @Test
+    void selectNotAssignedTrainersShouldThrowUserNotFoundExceptionWhenUserNonExistent() {
+        RuntimeException e = assertThrows(UserNotFoundException.class, () -> service.selectNotAssignedTrainers("Non.Existent"));
+        assertEquals("Trainee with username Non.Existent was not found", e.getMessage());
+    }
+
+    @Test
     void updateTrainersShouldTryToUpdateDatabase() {
         doNothing().when(dao).updateTrainers(any(), anyMap());
-        when(dao.select(anyString())).thenReturn(trainee);
+        when(dao.select(anyString())).thenReturn(Optional.of(trainee));
         service.updateTrainers("Test.Trainee", Map.of("Test.Trainer", true));
         verify(dao, times(1)).updateTrainers(trainee, Map.of("Test.Trainer", true));
     }
@@ -131,6 +150,12 @@ class TraineeServiceImplTest {
     void updateTrainersShouldThrowIllegalArgumentExceptionWhenTrainersInvalid() {
         RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.updateTrainers("Test.Trainee", null));
         assertEquals("Trainers are not valid", e.getMessage());
+    }
+
+    @Test
+    void updateTrainersShouldThrowUserNotFoundExceptionWhenUserNonExistent() {
+        RuntimeException e = assertThrows(UserNotFoundException.class, () -> service.updateTrainers("Non.Existent", new HashMap<>()));
+        assertEquals("Trainee with username Non.Existent was not found", e.getMessage());
     }
 
     @Test
@@ -143,8 +168,8 @@ class TraineeServiceImplTest {
     @Test
     void selectShouldTryToReturnTrainee() {
         trainee.setUsername("Test.Trainee");
-        when(dao.select(anyString())).thenReturn(trainee);
-        Trainee found = service.select("Test.Trainer");
+        when(dao.select(anyString())).thenReturn(Optional.of(trainee));
+        Trainee found = service.select("Test.Trainer").orElse(null);
         assertNotNull(found);
         assertEquals("Test.Trainee", found.getUsername());
     }

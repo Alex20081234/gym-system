@@ -5,15 +5,15 @@ import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.common.Dao;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
+import lombok.AllArgsConstructor;
 import java.util.List;
+import java.util.Optional;
 
 @Dao
+@AllArgsConstructor
 public class TrainerDaoImpl implements TrainerDao {
+    private static final String NOT_FOUND = "Trainer with username %s was not found";
     private final EntityManager entityManager;
-
-    public TrainerDaoImpl(EntityManager entityManager) {
-        this.entityManager = entityManager;
-    }
 
     @Override
     public void create(Trainer trainer) {
@@ -22,9 +22,14 @@ public class TrainerDaoImpl implements TrainerDao {
 
     @Override
     public void changePassword(String username, String newPassword) {
-        Trainer trainer = entityManager.createQuery("select t from Trainer t where t.username = :username", Trainer.class)
-                .setParameter("username", username)
-                .getSingleResult();
+        Trainer trainer;
+        try {
+            trainer = entityManager.createQuery("select t from Trainer t where t.username = :username", Trainer.class)
+                    .setParameter("username", username)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            throw new UserNotFoundException(String.format(NOT_FOUND, username));
+        }
         trainer.setPassword(newPassword);
         entityManager.merge(trainer);
     }
@@ -37,24 +42,27 @@ public class TrainerDaoImpl implements TrainerDao {
 
     @Override
     public void changeActivityStatus(String username, boolean newActivityStatus) {
-        Trainer trainer = entityManager.createQuery("select t from Trainer t where t.username = :username", Trainer.class)
-                .setParameter("username", username)
-                .getSingleResult();
+        Trainer trainer;
+        try {
+            trainer = entityManager.createQuery("select t from Trainer t where t.username = :username", Trainer.class)
+                    .setParameter("username", username)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            throw new UserNotFoundException(String.format(NOT_FOUND, username));
+        }
         trainer.setIsActive(newActivityStatus);
         entityManager.merge(trainer);
     }
 
     @Override
-    public Trainer select(String username) {
-        Trainer trainer;
+    public Optional<Trainer> select(String username) {
         try {
-            trainer = entityManager.createQuery("SELECT t FROM Trainer t WHERE t.username = :username", Trainer.class)
+            return Optional.ofNullable(entityManager.createQuery("SELECT t FROM Trainer t WHERE t.username = :username", Trainer.class)
                     .setParameter("username", username)
-                    .getSingleResult();
+                    .getSingleResult());
         } catch (NoResultException e) {
-            throw new UserNotFoundException("Trainer with username " + username + " was not found");
+            return Optional.empty();
         }
-        return trainer;
     }
 
     @Override

@@ -1,31 +1,30 @@
 package com.epam.gymsystem.service;
 
+import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.common.UserUtils;
 import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.dao.TrainerDao;
-import com.epam.gymsystem.dto.UsernameAndPassword;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.epam.gymsystem.dto.Credentials;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class TrainerServiceImpl implements TrainerService {
     private static final String NOT_VALID = "Trainer is not valid";
+    private static final String NOT_FOUND = "Trainer with username %s was not found";
     private final TrainerDao dao;
-
-    @Autowired
-    public TrainerServiceImpl(TrainerDao dao) {
-        this.dao = dao;
-    }
 
     @Override
     @Transactional
-    public UsernameAndPassword create(Trainer trainer) {
+    public Credentials create(Trainer trainer) {
         if (trainer == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
-        UsernameAndPassword usernameAndPassword = UserUtils.setUsernameAndPassword(trainer, dao.selectUsernames());
+        Credentials usernameAndPassword = UserUtils.setUsernameAndPassword(trainer, dao.selectUsernames());
         if (!isValid(trainer)) {
             throw new IllegalArgumentException(NOT_VALID);
         }
@@ -48,14 +47,14 @@ public class TrainerServiceImpl implements TrainerService {
         if (updates == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
-        Trainer trainer = dao.select(username);
+        Trainer trainer = dao.select(username).orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, username)));
         return dao.update(username, (Trainer) UserUtils.mergeUsers(trainer, updates, dao.selectUsernames()));
     }
 
     @Override
     @Transactional
     public void changeActivityStatus(String username, boolean newActivityStatus) {
-        Trainer trainer = dao.select(username);
+        Trainer trainer = dao.select(username).orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, username)));
         if (trainer.getIsActive() == newActivityStatus) {
             throw new IllegalArgumentException("Activity status is already " + newActivityStatus);
         }
@@ -64,7 +63,7 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @Transactional(readOnly = true)
-    public Trainer select(String username) {
+    public Optional<Trainer> select(String username) {
         return dao.select(username);
     }
 

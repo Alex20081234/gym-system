@@ -16,7 +16,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
@@ -54,7 +56,7 @@ class TraineeControllerTest {
                 .dateOfBirth("1988-10-12")
                 .address("New Lane Avenue")
                 .build();
-        UsernameAndPassword expectedResponse = UsernameAndPassword.builder()
+        Credentials expectedResponse = Credentials.builder()
                 .username("Test.User")
                 .password("password")
                 .build();
@@ -76,7 +78,7 @@ class TraineeControllerTest {
         mockMvc.perform(put("/trainees/login/Test.User")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(passwords)))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 
     @Test
@@ -104,12 +106,19 @@ class TraineeControllerTest {
                 .dateOfBirth(LocalDate.of(1989, 10, 12))
                 .address("New Lane Avenue")
                 .build();
-        when(traineeService.select("Test.User")).thenReturn(trainee);
+        when(traineeService.select("Test.User")).thenReturn(Optional.of(trainee));
         mockMvc.perform(get("/trainees/Test.User"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"firstName\":\"Test\",\"lastName\":\"User\"" +
                         ",\"dateOfBirth\":\"1989-10-12\",\"address\":\"New Lane Avenue\"" +
                         ",\"isActive\":true,\"trainers\":[]}"));
+    }
+
+    @Test
+    void getTraineeShouldReturnNotFoundWhenUserNonExistent() throws Exception {
+        mockMvc.perform(get("/trainees/Non.Existent"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Trainee with username Non.Existent was not found"));
     }
 
     @Test
@@ -131,7 +140,7 @@ class TraineeControllerTest {
                 .address("New Lane Avenue")
                 .build();
         when(traineeService.update(eq("Test.User"), any())).thenReturn("Updated.User");
-        when(traineeService.select("Updated.User")).thenReturn(updated);
+        when(traineeService.select("Updated.User")).thenReturn(Optional.of(updated));
         mockMvc.perform(put("/trainees/profile/Test.User")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(requestTrainee)))
@@ -143,10 +152,27 @@ class TraineeControllerTest {
     }
 
     @Test
+    void updateTrainerShouldReturnNotFoundWhenUserNonExistent() throws Exception {
+        ExtendedRequestTrainee requestTrainee = ExtendedRequestTrainee.builder()
+                .firstName("Updated")
+                .lastName("NonExistent")
+                .dateOfBirth("1988-10-12")
+                .address("New Lane Avenue")
+                .isActive("true")
+                .build();
+        when(traineeService.update(anyString(), any())).thenReturn("Updated.NonExistent");
+        mockMvc.perform(put("/trainees/profile/Test.User")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(requestTrainee)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Trainee with username Updated.NonExistent was not found"));
+    }
+
+    @Test
     void deleteTraineeShouldTryToDeleteTrainee() throws Exception {
         doNothing().when(traineeService).delete("Test.User");
         mockMvc.perform(delete("/trainees/Test.User"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 
     @Test
@@ -211,7 +237,7 @@ class TraineeControllerTest {
                 .trainers(Set.of(trainer))
                 .build();
         doNothing().when(traineeService).updateTrainers(anyString(), any());
-        when(traineeService.select("Test.User")).thenReturn(trainee);
+        when(traineeService.select("Test.User")).thenReturn(Optional.of(trainee));
         doNothing().when(traineeService).loadDependencies(any());
         mockMvc.perform(put("/trainees/Test.User/trainers")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -222,9 +248,49 @@ class TraineeControllerTest {
     }
 
     @Test
+    void updateTrainersShouldReturnNotFoundWhenUserNonExistent() throws Exception {
+        TrainerRequiredPair pair = TrainerRequiredPair.builder()
+                .username("Test.Trainer")
+                .required(true)
+                .build();
+        doNothing().when(traineeService).updateTrainers(anyString(), any());
+        mockMvc.perform(put("/trainees/Non.Existent/trainers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(List.of(pair))))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Trainee with username Non.Existent was not found"));
+    }
+
+    @Test
+    void updateTrainersShouldReturnEmptyListWhenNoTrainersAssigned() throws Exception {
+        TrainerRequiredPair pair = TrainerRequiredPair.builder()
+                .username("Test.Trainer")
+                .required(true)
+                .build();
+        Trainee trainee = Trainee.builder()
+                .firstName("Test")
+                .lastName("User")
+                .username("Test.User")
+                .password("password")
+                .isActive(true)
+                .dateOfBirth(LocalDate.of(1988, 10, 12))
+                .address("New Lane Avenue")
+                .trainers(new HashSet<>())
+                .build();
+        doNothing().when(traineeService).updateTrainers(anyString(), any());
+        when(traineeService.select("Test.User")).thenReturn(Optional.of(trainee));
+        doNothing().when(traineeService).loadDependencies(any());
+        mockMvc.perform(put("/trainees/Test.User/trainers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(List.of(pair))))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"));
+    }
+
+    @Test
     void changeActivityStatusShouldTryToChangeStatus() throws Exception {
         doNothing().when(traineeService).changeActivityStatus("Test.User", false);
         mockMvc.perform(patch("/trainees/activity-status/Test.User?isActive=false"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 }
