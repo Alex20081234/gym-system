@@ -1,32 +1,25 @@
 package com.epam.gymsystem.dao;
 
 import com.epam.gymsystem.common.UserNotFoundException;
-import com.epam.gymsystem.configuration.GymSystemConfiguration;
 import com.epam.gymsystem.domain.Trainee;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {GymSystemConfiguration.class})
-@WebAppConfiguration
+@SpringBootTest
+@ActiveProfiles("test")
 @Transactional
 class AuthDaoTest {
     @Autowired
     private AuthDaoImpl authDao;
     @Autowired
     private TraineeDaoImpl traineeDao;
-    @Autowired
-    private EntityManager entityManager;
     private Trainee initial;
 
     @BeforeEach

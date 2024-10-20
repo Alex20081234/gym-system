@@ -74,7 +74,7 @@ class MappingUtilsTest {
         Trainer trainer = MappingUtils.fromExtendedRequestTrainerToTrainer(extendedRequestTrainer);
         assertThat(trainer.getFirstName()).isEqualTo("Tom");
         assertThat(trainer.getLastName()).isEqualTo("Smith");
-        assertThat(trainer.getSpecialization().getId()).isEqualTo(2L);
+        assertThat(trainer.getSpecialization().getId()).isEqualTo(2);
         assertThat(trainer.getSpecialization().getName()).isEqualTo("Weightlifting");
         assertThat(trainer.getIsActive()).isTrue();
     }

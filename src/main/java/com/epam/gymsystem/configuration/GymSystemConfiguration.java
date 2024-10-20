@@ -1,7 +1,5 @@
 package com.epam.gymsystem.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManager;
@@ -42,13 +40,6 @@ public class GymSystemConfiguration {
 
     @Value("${spring.jpa.hibernate.ddl-auto}")
     private String hibernateHbm2ddlAuto;
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        return mapper;
-    }
 
     @Bean
     public DataSource dataSource() {
