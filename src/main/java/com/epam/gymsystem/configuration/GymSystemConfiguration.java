@@ -14,6 +14,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import javax.sql.DataSource;
+import java.net.http.HttpClient;
+import java.time.Duration;
+import java.util.AbstractMap;
+import java.util.Map;
 import java.util.Properties;
 
 @Configuration
@@ -69,6 +73,18 @@ public class GymSystemConfiguration {
     @Bean
     public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
+    }
+
+    @Bean
+    public Map.Entry<String, String> externalSystemInfo() {
+        return new AbstractMap.SimpleEntry<>("Google", "https://www.google.com");
+    }
+
+    @Bean
+    public HttpClient httpClient() {
+        return HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(3))
+                .build();
     }
 
     private Properties hibernateProperties() {

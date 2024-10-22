@@ -105,8 +105,6 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     private boolean isValid(Trainee trainee) {
-        return trainee != null && trainee.getUsername() != null && trainee.getPassword() != null
-                && trainee.getFirstName() != null && trainee.getLastName() != null
-                && trainee.getIsActive() != null;
+        return trainee.getIsActive() != null;
     }
 }

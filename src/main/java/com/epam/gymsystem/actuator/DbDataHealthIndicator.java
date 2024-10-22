@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 @ConditionalOnEnabledHealthIndicator("db_data")
-public class DbDataHealthIndicator implements HealthIndicator {
+public final class DbDataHealthIndicator implements HealthIndicator {
     private EntityManager entityManager;
 
     @Override

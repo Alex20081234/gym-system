@@ -10,17 +10,17 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 @ConditionalOnEnabledMetricsExport("active_trainees_counter")
-public class ActiveTraineesMetrics {
+public final class ActiveTraineesMetrics {
     private final EntityManager entityManager;
     private final MeterRegistry meterRegistry;
-
-    private long countActiveTrainees() {
-        return entityManager.createQuery("SELECT COUNT(t) FROM Trainee t WHERE t.isActive = true", Long.class)
-                .getSingleResult();
-    }
 
     @Scheduled(fixedRate = 60000)
     public void updateTraineesCount() {
         meterRegistry.gauge("active_trainees_counter", countActiveTrainees());
+    }
+
+    private long countActiveTrainees() {
+        return entityManager.createQuery("SELECT COUNT(t) FROM Trainee t WHERE t.isActive = true", Long.class)
+                .getSingleResult();
     }
 }

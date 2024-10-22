@@ -80,8 +80,6 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     private boolean isValid(Trainer trainer) {
-        return trainer != null && trainer.getFirstName() != null && trainer.getLastName() != null
-                && trainer.getUsername() != null && trainer.getPassword() != null
-                && trainer.getIsActive() != null && trainer.getSpecialization() != null;
+        return trainer.getIsActive() != null && trainer.getSpecialization() != null;
     }
 }
