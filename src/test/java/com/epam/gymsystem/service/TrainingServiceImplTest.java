@@ -68,8 +68,36 @@ class TrainingServiceImplTest {
 
     @Test
     void createShouldThrowExceptionWhenInvalidTraining() {
+        String notValid = "Training is not valid";
         RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.create(null));
-        assertEquals("Training is not valid", e.getMessage());
+        assertEquals(notValid, e.getMessage());
+        initial.setTrainee(null);
+        e = assertThrows(IllegalArgumentException.class, () -> service.create(initial));
+        assertEquals(notValid, e.getMessage());
+        setUp();
+        initial.setTrainer(null);
+        e = assertThrows(IllegalArgumentException.class, () -> service.create(initial));
+        assertEquals(notValid, e.getMessage());
+        setUp();
+        initial.setTrainingName(null);
+        e = assertThrows(IllegalArgumentException.class, () -> service.create(initial));
+        assertEquals(notValid, e.getMessage());
+        setUp();
+        initial.setTrainingName("");
+        e = assertThrows(IllegalArgumentException.class, () -> service.create(initial));
+        assertEquals(notValid, e.getMessage());
+        setUp();
+        initial.setTrainingType(null);
+        e = assertThrows(IllegalArgumentException.class, () -> service.create(initial));
+        assertEquals(notValid, e.getMessage());
+        setUp();
+        initial.setTrainingDate(null);
+        e = assertThrows(IllegalArgumentException.class, () -> service.create(initial));
+        assertEquals(notValid, e.getMessage());
+        setUp();
+        initial.setDuration(0);
+        e = assertThrows(IllegalArgumentException.class, () -> service.create(initial));
+        assertEquals(notValid, e.getMessage());
     }
 
     @Test

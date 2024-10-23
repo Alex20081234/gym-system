@@ -46,6 +46,12 @@ class TrainerServiceImplTest {
     void createShouldThrowIllegalArgumentExceptionWhenTrainerInvalid() {
         RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.create(null));
         assertEquals("Trainer is not valid", e.getMessage());
+        when(dao.selectUsernames()).thenReturn(Collections.emptyList());
+        trainer.setIsActive(null);
+        e = assertThrows(IllegalArgumentException.class, () -> service.create(trainer));
+        assertEquals("Trainer is not valid", e.getMessage());
+        trainer.setIsActive(true);
+        when(dao.selectUsernames()).thenReturn(Collections.emptyList());
         trainer.setSpecialization(null);
         e = assertThrows(IllegalArgumentException.class, () -> service.create(trainer));
         assertEquals("Trainer is not valid", e.getMessage());
@@ -61,7 +67,11 @@ class TrainerServiceImplTest {
 
     @Test
     void changePasswordShouldThrowIllegalArgumentExceptionWhenPasswordInvalid() {
-        RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.changePassword("Test.Trainer", ""));
+        RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.changePassword("Test.Trainer", null));
+        assertEquals("New password is not valid", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class, () -> service.changePassword("Test.Trainer", "12"));
+        assertEquals("New password is not valid", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class, () -> service.changePassword("Test.Trainer", "01234567890123456789028484545"));
         assertEquals("New password is not valid", e.getMessage());
     }
 
@@ -135,5 +145,12 @@ class TrainerServiceImplTest {
         List<Trainer> trainers = service.selectAll();
         assertFalse(CollectionUtils.isEmpty(trainers));
         assertEquals(2, trainers.size());
+    }
+
+    @Test
+    void loadDependencies() {
+        doNothing().when(dao).loadDependencies(trainer);
+        service.loadDependencies(trainer);
+        verify(dao, times(1)).loadDependencies(trainer);
     }
 }

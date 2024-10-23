@@ -48,7 +48,7 @@ class TraineeServiceImplTest {
     void createShouldThrowIllegalArgumentExceptionWhenTraineeInvalid() {
         RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.create(null));
         assertEquals("Trainee is not valid", e.getMessage());
-        trainee.setFirstName(null);
+        trainee.setIsActive(null);
         e = assertThrows(IllegalArgumentException.class, () -> service.create(trainee));
         assertEquals("Trainee is not valid", e.getMessage());
     }
@@ -63,7 +63,11 @@ class TraineeServiceImplTest {
 
     @Test
     void changePasswordShouldThrowIllegalArgumentExceptionWhenPasswordInvalid() {
-        RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.changePassword("Test.Trainee", ""));
+        RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.changePassword("Test.Trainee", null));
+        assertEquals("New password is not valid", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class, () -> service.changePassword("Test.Trainer", "12"));
+        assertEquals("New password is not valid", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class, () -> service.changePassword("Test.Trainer", "01234567890123456789028484545"));
         assertEquals("New password is not valid", e.getMessage());
     }
 
@@ -180,5 +184,12 @@ class TraineeServiceImplTest {
         List<Trainee> trainees = service.selectAll();
         assertFalse(CollectionUtils.isEmpty(trainees));
         assertEquals(2, trainees.size());
+    }
+
+    @Test
+    void loadDependencies() {
+        doNothing().when(dao).loadDependencies(trainee);
+        service.loadDependencies(trainee);
+        verify(dao, times(1)).loadDependencies(trainee);
     }
 }

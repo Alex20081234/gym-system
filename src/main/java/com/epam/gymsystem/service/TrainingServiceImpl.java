@@ -60,7 +60,8 @@ public class TrainingServiceImpl implements TrainingService {
     private boolean isValid(Training training) {
         return training != null && training.getTrainee() != null
                 && training.getTrainer() != null && training.getTrainingName() != null
-                && training.getTrainingType() != null && training.getTrainingDate() != null
+                && !training.getTrainingName().isEmpty() && training.getTrainingType() != null
+                && training.getTrainingDate() != null
                 && training.getDuration() > 0;
     }
 }

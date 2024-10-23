@@ -4,8 +4,8 @@ import com.epam.gymsystem.domain.*;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 import java.util.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class UserUtilsTest {
     @Test
@@ -23,6 +23,22 @@ class UserUtilsTest {
         String username = UserUtils.generateUsername("Jane", "Doe", Collections.emptyList());
         assertNotNull(username);
         assertEquals("Jane.Doe", username);
+    }
+
+    @Test
+    void generateUsernameShouldThrowIllegalArgumentExceptionWhenInvalidParams() {
+        RuntimeException e = assertThrows(IllegalArgumentException.class,
+                () -> UserUtils.generateUsername(null, "Test", Collections.emptyList()));
+        assertEquals("Invalid firstname or lastname", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class,
+                () -> UserUtils.generateUsername("", "Test", Collections.emptyList()));
+        assertEquals("Invalid firstname or lastname", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class,
+                () -> UserUtils.generateUsername("Test", null, Collections.emptyList()));
+        assertEquals("Invalid firstname or lastname", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class,
+                () -> UserUtils.generateUsername("Test", "", Collections.emptyList()));
+        assertEquals("Invalid firstname or lastname", e.getMessage());
     }
 
     @Test

@@ -185,7 +185,7 @@ public class TraineeController {
         Trainee trainee = traineeService.select(username)
                 .orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, username)));
         traineeService.loadDependencies(trainee);
-        if (trainee.getTrainers() != null && !trainee.getTrainers().isEmpty()) {
+        if (!trainee.getTrainers().isEmpty()) {
             return ResponseEntity.ok(trainee.getTrainers().stream().map(MappingUtils::fromTrainerToShortTrainer).toList());
         }
         return ResponseEntity.ok(new ArrayList<>());

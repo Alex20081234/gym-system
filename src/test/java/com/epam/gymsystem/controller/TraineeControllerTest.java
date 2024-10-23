@@ -152,7 +152,7 @@ class TraineeControllerTest {
     }
 
     @Test
-    void updateTrainerShouldReturnNotFoundWhenUserNonExistent() throws Exception {
+    void updateTraineeShouldReturnNotFoundWhenUserNonExistent() throws Exception {
         ExtendedRequestTrainee requestTrainee = ExtendedRequestTrainee.builder()
                 .firstName("Updated")
                 .lastName("NonExistent")

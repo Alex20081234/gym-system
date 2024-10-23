@@ -1,9 +1,6 @@
 package com.epam.gymsystem.controller;
 
-import com.epam.gymsystem.domain.Trainee;
-import com.epam.gymsystem.domain.Trainer;
-import com.epam.gymsystem.domain.Training;
-import com.epam.gymsystem.domain.TrainingType;
+import com.epam.gymsystem.domain.*;
 import com.epam.gymsystem.dto.RequestTraining;
 import com.epam.gymsystem.service.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -124,7 +121,13 @@ class TrainingControllerTest {
     }
 
     @Test
-    void getTrainingsShouldTryToReturnTrainings()  throws Exception {
+    void getTrainingsShouldTryToSelectTrainingsWithDifferentCriteria() throws Exception {
+        getTrainingsByCriteria("/trainings/Test.Trainee?" +
+                "startDate=2024-10-16&endDate=2024-11-17&partnerName=Test.Trainer&typeName=Boxing");
+        getTrainingsByCriteria("/trainings/Test.Trainee");
+    }
+
+    void getTrainingsByCriteria(String url) throws Exception {
         Trainee trainee = Trainee.builder()
                 .firstName("Test")
                 .lastName("Trainee")
@@ -157,7 +160,7 @@ class TrainingControllerTest {
                 .duration(60)
                 .build();
         when(trainingService.selectTrainings(any(), any())).thenReturn(List.of(training));
-        mockMvc.perform(get("/trainings/Test.Trainee"))
+        mockMvc.perform(get(url))
                 .andExpect(status().isOk())
                 .andExpect(content().json("[{\"name\":\"Boxing practise\",\"date\":\"2024-10-17\"," +
                         "\"type\":{\"name\":\"Boxing\",\"id\":100},\"duration\":60,\"partnerName\":\"Test.Trainer\"}]"));
