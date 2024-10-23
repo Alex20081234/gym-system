@@ -35,6 +35,10 @@ public final class UserUtils {
     }
 
     public static String generateUsername(String firstName, String lastName, List<String> userNames) {
+        if (firstName == null || firstName.isEmpty()
+        || lastName == null || lastName.isEmpty()) {
+            throw new IllegalArgumentException("Invalid firstname or lastname");
+        }
         StringBuilder username = new StringBuilder(firstName + "." + lastName);
         int counter = 0;
         while (exists(username.toString(), userNames)) {
