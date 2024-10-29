@@ -12,7 +12,6 @@ import org.springframework.orm.jpa.SharedEntityManagerCreator;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import javax.sql.DataSource;
 import java.net.http.HttpClient;
 import java.time.Duration;
@@ -22,7 +21,6 @@ import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
-@EnableWebMvc
 @ComponentScan("com.epam.gymsystem")
 @PropertySource("classpath:application.properties")
 @PropertySource("classpath:application-${spring.profiles.active}.properties")

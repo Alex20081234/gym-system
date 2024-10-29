@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.CollectionUtils;
 import java.time.LocalDate;
 import java.util.*;
@@ -18,6 +19,8 @@ import static org.mockito.Mockito.*;
 class TraineeServiceImplTest {
     @Mock
     private TraineeDaoImpl dao;
+    @Mock
+    private PasswordEncoder encoder;
     @InjectMocks
     private TraineeServiceImpl service;
     private Trainee trainee;
@@ -40,6 +43,7 @@ class TraineeServiceImplTest {
     void createShouldTryToAddTraineeToDatabase() {
         doNothing().when(dao).create(any(Trainee.class));
         when(dao.selectUsernames()).thenReturn(Collections.emptyList());
+        when(encoder.encode(anyString())).thenReturn("password");
         service.create(trainee);
         verify(dao, times(1)).create(trainee);
     }
@@ -57,6 +61,7 @@ class TraineeServiceImplTest {
     void changePasswordShouldTryToMakeChangeToDatabase() {
         doNothing().when(dao).changePassword(any(), anyString());
         doReturn(Optional.of(trainee)).when(dao).select(anyString());
+        when(encoder.encode(anyString())).thenReturn("newpassword");
         service.changePassword("Test.Trainee", "newpassword");
         verify(dao, times(1)).changePassword("Test.Trainee", "newpassword");
     }

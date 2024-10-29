@@ -6,6 +6,7 @@ import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.dao.TrainerDao;
 import com.epam.gymsystem.dto.Credentials;
 import lombok.AllArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -17,6 +18,7 @@ public class TrainerServiceImpl implements TrainerService {
     private static final String NOT_VALID = "Trainer is not valid";
     private static final String NOT_FOUND = "Trainer with username %s was not found";
     private final TrainerDao dao;
+    private PasswordEncoder encoder;
 
     @Override
     @Transactional
@@ -24,12 +26,14 @@ public class TrainerServiceImpl implements TrainerService {
         if (trainer == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
-        Credentials usernameAndPassword = UserUtils.setUsernameAndPassword(trainer, dao.selectUsernames());
+        Credentials credentials = UserUtils.setUsernameAndPassword(trainer, dao.selectUsernames());
+        String encoded = encoder.encode(trainer.getPassword());
+        trainer.setPassword(encoded);
         if (!isValid(trainer)) {
             throw new IllegalArgumentException(NOT_VALID);
         }
         dao.create(trainer);
-        return usernameAndPassword;
+        return credentials;
     }
 
     @Override
@@ -38,7 +42,8 @@ public class TrainerServiceImpl implements TrainerService {
         if (newPassword == null || newPassword.length() < 8 || newPassword.length() > 20) {
             throw new IllegalArgumentException("New password is not valid");
         }
-        dao.changePassword(username, newPassword);
+        String encoded = encoder.encode(newPassword);
+        dao.changePassword(username, encoded);
     }
 
     @Override
@@ -48,6 +53,12 @@ public class TrainerServiceImpl implements TrainerService {
             throw new IllegalArgumentException(NOT_VALID);
         }
         Trainer trainer = dao.select(username).orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, username)));
+        String password = updates.getPassword();
+        String encoded = password;
+        if (password != null) {
+            encoded = encoder.encode(password);
+        }
+        updates.setPassword(encoded);
         return dao.update(username, (Trainer) UserUtils.mergeUsers(trainer, updates, dao.selectUsernames()));
     }
 

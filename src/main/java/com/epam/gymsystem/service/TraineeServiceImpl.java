@@ -7,6 +7,7 @@ import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.dto.Credentials;
 import lombok.AllArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -19,6 +20,7 @@ public class TraineeServiceImpl implements TraineeService {
     private static final String NOT_VALID = "Trainee is not valid";
     private static final String NOT_FOUND = "Trainee with username %s was not found";
     private final TraineeDao dao;
+    private PasswordEncoder encoder;
 
     @Override
     @Transactional(readOnly = true)
@@ -49,12 +51,14 @@ public class TraineeServiceImpl implements TraineeService {
         if (trainee == null) {
             throw new IllegalArgumentException(NOT_VALID);
         }
-        Credentials usernameAndPassword = UserUtils.setUsernameAndPassword(trainee, dao.selectUsernames());
+        Credentials credentials = UserUtils.setUsernameAndPassword(trainee, dao.selectUsernames());
+        String encoded = encoder.encode(trainee.getPassword());
+        trainee.setPassword(encoded);
         if (!isValid(trainee)) {
             throw new IllegalArgumentException(NOT_VALID);
         }
         dao.create(trainee);
-        return usernameAndPassword;
+        return credentials;
     }
 
     @Override
@@ -63,7 +67,8 @@ public class TraineeServiceImpl implements TraineeService {
         if (newPassword == null || newPassword.length() < 8 || newPassword.length() > 20) {
             throw new IllegalArgumentException("New password is not valid");
         }
-        dao.changePassword(username, newPassword);
+        String encoded = encoder.encode(newPassword);
+        dao.changePassword(username, encoded);
     }
 
     @Override
@@ -73,6 +78,12 @@ public class TraineeServiceImpl implements TraineeService {
             throw new IllegalArgumentException(NOT_VALID);
         }
         Trainee trainee = dao.select(username).orElseThrow(() -> new UserNotFoundException(String.format(NOT_FOUND, username)));
+        String password = updates.getPassword();
+        String encoded = password;
+        if (password != null) {
+            encoded = encoder.encode(password);
+        }
+        updates.setPassword(encoded);
         return dao.update(username, (Trainee) UserUtils.mergeUsers(trainee, updates, dao.selectUsernames()));
     }
 

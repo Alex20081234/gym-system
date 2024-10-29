@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.CollectionUtils;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -17,6 +18,8 @@ import static org.mockito.Mockito.*;
 class TrainerServiceImplTest {
     @Mock
     private TrainerDaoImpl dao;
+    @Mock
+    private PasswordEncoder encoder;
     @InjectMocks
     private TrainerServiceImpl service;
     private Trainer trainer;
@@ -38,6 +41,7 @@ class TrainerServiceImplTest {
     void createShouldTryToAddTrainerToDatabase() {
         doNothing().when(dao).create(any(Trainer.class));
         when(dao.selectUsernames()).thenReturn(Collections.emptyList());
+        when(encoder.encode(anyString())).thenReturn("password");
         service.create(trainer);
         verify(dao, times(1)).create(trainer);
     }
@@ -47,11 +51,13 @@ class TrainerServiceImplTest {
         RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.create(null));
         assertEquals("Trainer is not valid", e.getMessage());
         when(dao.selectUsernames()).thenReturn(Collections.emptyList());
+        when(encoder.encode(anyString())).thenReturn("password");
         trainer.setIsActive(null);
         e = assertThrows(IllegalArgumentException.class, () -> service.create(trainer));
         assertEquals("Trainer is not valid", e.getMessage());
         trainer.setIsActive(true);
         when(dao.selectUsernames()).thenReturn(Collections.emptyList());
+        when(encoder.encode(anyString())).thenReturn("password");
         trainer.setSpecialization(null);
         e = assertThrows(IllegalArgumentException.class, () -> service.create(trainer));
         assertEquals("Trainer is not valid", e.getMessage());
@@ -61,6 +67,7 @@ class TrainerServiceImplTest {
     void changePasswordShouldTryToMakeChangeToDatabase() {
         doNothing().when(dao).changePassword(any(), anyString());
         doReturn(Optional.of(trainer)).when(dao).select(anyString());
+        when(encoder.encode(anyString())).thenReturn("newpassword");
         service.changePassword("Test.Trainer", "newpassword");
         verify(dao, times(1)).changePassword("Test.Trainer", "newpassword");
     }

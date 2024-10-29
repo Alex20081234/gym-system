@@ -9,6 +9,7 @@ import com.epam.gymsystem.common.MappingUtils;
 import com.epam.gymsystem.service.TraineeService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -63,6 +64,7 @@ public class TraineeController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @PutMapping("/login/{username}")
     public ResponseEntity<Void> changeLogin(@PathVariable String username, @RequestBody Passwords passwords) {
         String foundPassword = authService.selectPassword(username);
@@ -89,6 +91,7 @@ public class TraineeController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @GetMapping("/{username}")
     public ResponseEntity<ResponseTrainee> getTrainee(@PathVariable String username) {
         Trainee trainee = traineeService.select(username)
@@ -111,6 +114,7 @@ public class TraineeController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @PutMapping("/profile/{username}")
     public ResponseEntity<ResponseTraineeWithUsername> updateTrainee(@PathVariable String username,
                                                                      @RequestBody ExtendedRequestTrainee extendedRequestTrainee) {
@@ -134,6 +138,7 @@ public class TraineeController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @DeleteMapping("/{username}")
     public ResponseEntity<Void> deleteTrainee(@PathVariable String username) {
         traineeService.delete(username);
@@ -155,6 +160,7 @@ public class TraineeController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @GetMapping("/not-assigned-trainers/{username}")
     public ResponseEntity<List<ShortTrainer>> getNotAssignedTrainers(@PathVariable String username) {
         List<Trainer> trainers = traineeService.selectNotAssignedTrainers(username);
@@ -176,6 +182,7 @@ public class TraineeController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @PutMapping("/{username}/trainers")
     public ResponseEntity<List<ShortTrainer>> updateTrainers(@PathVariable String username,
                                                              @RequestBody List<TrainerRequiredPair> pairs) {
@@ -204,6 +211,7 @@ public class TraineeController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @PatchMapping("/activity-status/{username}")
     public ResponseEntity<Void> changeActivityStatus(@PathVariable String username, @RequestParam Boolean isActive) {
         traineeService.changeActivityStatus(username, isActive);
