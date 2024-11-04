@@ -42,7 +42,7 @@ class GlobalExceptionHandlerTest {
     @Test
     void handleUserNotFoundExceptionShouldProcessUserNotFoundException() throws Exception {
         when(traineeController.getTrainee(anyString())).thenThrow(new UserNotFoundException("Trainee with username Non.Existent was not found"));
-        mockMvc.perform(get("/trainees/Non.Existent"))
+        mockMvc.perform(get("/api/v1/trainees/Non.Existent"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Trainee with username Non.Existent was not found"));
     }
@@ -56,7 +56,7 @@ class GlobalExceptionHandlerTest {
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(passwords);
         when(traineeController.changeLogin(any(), any())).thenThrow(new IllegalArgumentException("Invalid password"));
-        mockMvc.perform(put("/trainees/login/Test.User")
+        mockMvc.perform(put("/api/v1/trainees/login/Test.User")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest())
@@ -66,7 +66,7 @@ class GlobalExceptionHandlerTest {
     @Test
     void handleAccessDeniedRuntimeExceptionShouldProcessAccessDeniedRuntimeException() throws Exception {
         when(traineeController.getTrainee(anyString())).thenThrow(new AccessDeniedRuntimeException("Access denied"));
-        mockMvc.perform(get("/trainees/Test.User"))
+        mockMvc.perform(get("/api/v1/trainees/Test.User"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().string("Access denied"));
     }
@@ -74,7 +74,7 @@ class GlobalExceptionHandlerTest {
     @Test
     void handleExceptionShouldProcessAnyOtherException() throws Exception {
         when(traineeController.getTrainee(anyString())).thenThrow(new RuntimeException("General exception"));
-        mockMvc.perform(get("/trainees/Test.User"))
+        mockMvc.perform(get("/api/v1/trainees/Test.User"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("Unexpected error occurred : General exception"));
     }

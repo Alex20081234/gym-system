@@ -92,11 +92,15 @@ class TraineeServiceImplTest {
                 .trainings(new ArrayList<>())
                 .trainers(new HashSet<>())
                 .build();
-        when(dao.select(anyString())).thenReturn(Optional.of(trainee));
-        when(dao.update(any(), any(Trainee.class))).thenReturn("Updated.Trainee");
-        when(dao.selectUsernames()).thenReturn(Collections.emptyList());
-        service.update("Test.Trainee", updates);
-        verify(dao, times(1)).update("Test.Trainee", updated);
+        for (int i = 0; i < 2; i++) {
+            when(dao.select(anyString())).thenReturn(Optional.of(trainee));
+            when(encoder.encode("password")).thenReturn("password");
+            when(dao.update(any(), any(Trainee.class))).thenReturn("Updated.Trainee");
+            when(dao.selectUsernames()).thenReturn(Collections.emptyList());
+            service.update("Test.Trainee", updates);
+            verify(dao, times(i + 1)).update("Test.Trainee", updated);
+            updates.setPassword("password");
+        }
     }
 
     @Test

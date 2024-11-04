@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/trainees")
+@RequestMapping("/api/v1/trainees")
 @AllArgsConstructor
 public class TraineeController {
     private static final String NOT_FOUND = "Trainee with username %s was not found";

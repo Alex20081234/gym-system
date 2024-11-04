@@ -23,7 +23,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/trainings")
+@RequestMapping("/api/v1/trainings")
 @AllArgsConstructor
 public class TrainingController {
     private static final String USER_NOT_FOUND = "User with username %s was not found";

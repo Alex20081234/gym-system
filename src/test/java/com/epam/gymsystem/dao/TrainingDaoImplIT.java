@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class TrainingDaoImplTest {
+class TrainingDaoImplIT {
     @Autowired
     private TrainingDaoImpl trainingDao;
     @Autowired
@@ -142,7 +142,7 @@ class TrainingDaoImplTest {
     }
 
     @Test
-    void selectTrainingsShouldReturnTrainings() {
+    void selectTrainingsByCriteriaShouldReturnApplicableTrainings() {
         traineeDao.create(trainee);
         trainerDao.create(trainer);
         Training training = Training.builder()
@@ -168,7 +168,7 @@ class TrainingDaoImplTest {
     }
 
     @Test
-    void selectTrainingsCriteriaShouldReturnTrainingsWhenCriteriaIsNull() {
+    void selectTrainingsByCriteriaShouldReturnTrainingsWhenCriteriaIsNull() {
         traineeDao.create(trainee);
         trainerDao.create(trainer);
         Training training = Training.builder()
@@ -211,6 +211,32 @@ class TrainingDaoImplTest {
         cleanUpTrainer(trainerDao.select("Test.Trainer").orElse(null));
         assertNotNull(trainings);
         assertEquals(0, trainings.size());
+    }
+
+    @Test
+    void selectTrainingsShouldReturnTrainingsWhenCriteriaParamsNull() {
+        traineeDao.create(trainee);
+        trainerDao.create(trainer);
+        Training training = Training.builder()
+                .trainee(trainee)
+                .trainer(trainer)
+                .trainingDate(LocalDate.now())
+                .trainingName("Test training")
+                .duration(60)
+                .trainingType(entityManager.find(TrainingType.class, 1))
+                .build();
+        trainingDao.create(training);
+        TrainingCriteria criteria = TrainingCriteria.builder()
+                .fromDate(null)
+                .toDate(null)
+                .partnerUsername(null)
+                .trainingType(null)
+                .build();
+        List<Training> trainings = trainingDao.selectTrainings("Test.Trainer", criteria);
+        cleanUpTrainee("Test.Trainee");
+        cleanUpTrainer(trainerDao.select("Test.Trainer").orElse(null));
+        assertNotNull(trainings);
+        assertEquals(1, trainings.size());
     }
 
     @Test

@@ -1,10 +1,11 @@
 package com.epam.gymsystem.controller;
 
+import com.epam.gymsystem.dao.UserTriesDao;
 import com.epam.gymsystem.security.JwtService;
 import com.epam.gymsystem.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,18 +24,19 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
-@AllArgsConstructor
+@RequestMapping("/api/v1")
+@RequiredArgsConstructor
 public class AuthController {
-    private static final int MAX_FAILED_ATTEMPTS = 3;
-    private static final long LOCK_TIME = 5 * 60 * 1000L;
-    private final ConcurrentHashMap<String, UserAttempts> attempts = new ConcurrentHashMap<>();
+    private final UserTriesDao dao;
     private final AuthService authService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final PasswordEncoder encoder;
+
+    @Value("${gym-system.maxFailedAttempts}")
+    private int maxFailedAttempts;
 
     @Operation(summary = "User login", description = "Logs in a trainee or trainer based on the provided username and password. Returns a token upon successful login.")
     @ApiResponses(value = {
@@ -55,17 +58,14 @@ public class AuthController {
     public ResponseEntity<String> login(
             @Parameter(description = "Username of the user", required = true) @RequestParam String username,
             @Parameter(description = "Password of the user", required = true) @RequestParam String password) {
-        UserAttempts userAttempts = attempts.get(username);
-        if (userAttempts != null && userAttempts.isBlocked()) {
+        if (dao.isBlocked(username)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("You have been blocked for 5 minutes");
         }
         String foundPassword = authService.selectPassword(username);
         if (!encoder.matches(password, foundPassword)) {
-            userAttempts = attempts.computeIfAbsent(username, k -> new UserAttempts());
-            userAttempts.incrementAttempts();
-            if (userAttempts.attempts == MAX_FAILED_ATTEMPTS) {
-                userAttempts.block();
-                userAttempts.attempts = 0;
+            dao.incrementAttemptsOrCreateEntry(username);
+            if (dao.attempts(username) == maxFailedAttempts) {
+                dao.block(username);
             }
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
         }
@@ -95,31 +95,5 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(username, password));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         return jwtService.generateJwtToken(authentication);
-    }
-
-    private static class UserAttempts {
-        @Getter
-        private int attempts;
-        private long blockTime;
-
-        public UserAttempts() {
-            this.attempts = 0;
-            this.blockTime = 0;
-        }
-
-        public void incrementAttempts() {
-            attempts++;
-        }
-
-        public void block() {
-            this.blockTime = System.currentTimeMillis();
-        }
-
-        public boolean isBlocked() {
-            if (blockTime == 0) {
-                return false;
-            }
-            return (System.currentTimeMillis() - blockTime) < LOCK_TIME;
-        }
     }
 }

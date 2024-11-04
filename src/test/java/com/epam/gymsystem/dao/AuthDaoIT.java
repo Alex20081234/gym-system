@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class AuthDaoTest {
+class AuthDaoIT {
     @Autowired
     private AuthDaoImpl authDao;
     @Autowired

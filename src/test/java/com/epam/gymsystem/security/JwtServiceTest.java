@@ -1,7 +1,11 @@
 package com.epam.gymsystem.security;
 
+import com.epam.gymsystem.dao.BlacklistDaoImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -10,16 +14,22 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class JwtServiceTest {
-    private final JwtService jwtService = new JwtService();
+    @Mock
+    private BlacklistDaoImpl dao;
+    @InjectMocks
+    private JwtService jwtService;
     private Authentication authentication;
     private String testToken;
     private int counter = 0;
 
     @BeforeEach
     void setUp() {
+        MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(jwtService, "jwtExpirationMs", 600000);
+        ReflectionTestUtils.setField(jwtService, "key", "A2L8YVx0gfXUJpA5p3lBzX9K8klcmXUOvPjH4FbbJCI=");
         resetAuthentication();
         testToken = jwtService.generateJwtToken(authentication);
         counter++;
@@ -50,19 +60,25 @@ class JwtServiceTest {
 
     @Test
     void isTokenBlackListedShouldReturnTrueWhenTokenBlacklisted() {
-        jwtService.blacklistToken(testToken);
+        when(dao.isBlacklisted(testToken)).thenReturn(true);
         assertTrue(jwtService.isTokenBlackListed(testToken));
+        verify(dao, times(1)).isBlacklisted(testToken);
     }
 
     @Test
     void isTokenBlackListedShouldReturnFalseWhenTokenNotBlacklisted() {
+        when(dao.isBlacklisted(testToken)).thenReturn(false);
         assertFalse(jwtService.isTokenBlackListed(testToken));
+        verify(dao, times(1)).isBlacklisted(testToken);
     }
 
     @Test
-    void blacklistTokenShouldAddTokenToBlacklist() {
+    void blacklistTokenShouldTryToAddTokenToBlacklist() {
+        doNothing().when(dao).blacklist(any());
+        when(dao.isBlacklisted(testToken)).thenReturn(true);
         jwtService.blacklistToken(testToken);
         assertTrue(jwtService.isTokenBlackListed(testToken));
+        verify(dao, times(1)).blacklist(any());
     }
 
     @Test
@@ -78,6 +94,10 @@ class JwtServiceTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Authorization", "InvalidHeader " + testToken);
         assertNull(jwtService.parseJwt(request));
+        request.addHeader("Authorization", "");
+        assertNull(jwtService.parseJwt(request));
+        MockHttpServletRequest requestWithoutHeader = new MockHttpServletRequest();
+        assertNull(jwtService.parseJwt(requestWithoutHeader));
     }
 
     void resetAuthentication() {

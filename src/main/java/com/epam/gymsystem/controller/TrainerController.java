@@ -19,7 +19,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import java.net.URI;
 
 @RestController
-@RequestMapping("/trainers")
+@RequestMapping("/api/v1/trainers")
 @AllArgsConstructor
 public class TrainerController {
     private static final String NOT_FOUND = "Trainer with username %s was not found";

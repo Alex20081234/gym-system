@@ -59,7 +59,7 @@ class TrainerControllerTest {
                 .password("password")
                 .build();
         when(trainerService.create(any())).thenReturn(expectedResponse);
-        mockMvc.perform(post("/trainers")
+        mockMvc.perform(post("/api/v1/trainers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(requestTrainer)))
                 .andExpect(status().isCreated())
@@ -73,7 +73,7 @@ class TrainerControllerTest {
                 .newPassword("newPassword")
                 .build();
         when(authService.selectPassword("Test.User")).thenReturn("oldPassword");
-        mockMvc.perform(put("/trainers/login/Test.User")
+        mockMvc.perform(put("/api/v1/trainers/login/Test.User")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(passwords)))
                 .andExpect(status().isNoContent());
@@ -86,7 +86,7 @@ class TrainerControllerTest {
                 .newPassword("newPassword")
                 .build();
         when(authService.selectPassword("Test.User")).thenReturn("oldPassword");
-        mockMvc.perform(put("/trainers/login/Test.User")
+        mockMvc.perform(put("/api/v1/trainers/login/Test.User")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(passwords)))
                 .andExpect(status().isBadRequest())
@@ -107,7 +107,7 @@ class TrainerControllerTest {
                         .build())
                 .build();
         when(trainerService.select("Test.User")).thenReturn(Optional.of(trainer));
-        mockMvc.perform(get("/trainers/Test.User"))
+        mockMvc.perform(get("/api/v1/trainers/Test.User"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"firstName\":\"Test\",\"lastName\":\"User\"" +
                         ",\"specialization\":{\"name\":\"Boxing\",\"id\":100}" +
@@ -116,7 +116,7 @@ class TrainerControllerTest {
 
     @Test
     void getTrainerShouldReturnNotFoundWhenUserNonExistent() throws Exception {
-        mockMvc.perform(get("/trainers/Non.Existent"))
+        mockMvc.perform(get("/api/v1/trainers/Non.Existent"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Trainer with username Non.Existent was not found"));
     }
@@ -145,7 +145,7 @@ class TrainerControllerTest {
                 .build();
         when(trainerService.update(eq("Test.User"), any())).thenReturn("Updated.User");
         when(trainerService.select("Updated.User")).thenReturn(Optional.of(updated));
-        mockMvc.perform(put("/trainers/profile/Test.User")
+        mockMvc.perform(put("/api/v1/trainers/profile/Test.User")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(requestTrainer)))
                 .andExpect(status().isOk())
@@ -168,7 +168,7 @@ class TrainerControllerTest {
                 .isActive("true")
                 .build();
         when(trainerService.update(anyString(), any())).thenReturn("Updated.NonExistent");
-        mockMvc.perform(put("/trainers/profile/Test.User")
+        mockMvc.perform(put("/api/v1/trainers/profile/Test.User")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(requestTrainer)))
                 .andExpect(status().isNotFound())
@@ -178,7 +178,7 @@ class TrainerControllerTest {
     @Test
     void changeActivityStatusShouldTryToChangeStatus() throws Exception {
         doNothing().when(trainerService).changeActivityStatus("Test.User", false);
-        mockMvc.perform(patch("/trainers/activity-status/Test.User?isActive=false"))
+        mockMvc.perform(patch("/api/v1/trainers/activity-status/Test.User?isActive=false"))
                 .andExpect(status().isNoContent());
     }
 }

@@ -61,7 +61,7 @@ class TraineeControllerTest {
                 .password("password")
                 .build();
         when(traineeService.create(any())).thenReturn(expectedResponse);
-        mockMvc.perform(post("/trainees")
+        mockMvc.perform(post("/api/v1/trainees")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(requestTrainee)))
                 .andExpect(status().isCreated())
@@ -75,7 +75,7 @@ class TraineeControllerTest {
                 .newPassword("newPassword")
                 .build();
         when(authService.selectPassword("Test.User")).thenReturn("oldPassword");
-        mockMvc.perform(put("/trainees/login/Test.User")
+        mockMvc.perform(put("/api/v1/trainees/login/Test.User")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(passwords)))
                 .andExpect(status().isNoContent());
@@ -88,7 +88,7 @@ class TraineeControllerTest {
                 .newPassword("newPassword")
                 .build();
         when(authService.selectPassword("Test.User")).thenReturn("oldPassword");
-        mockMvc.perform(put("/trainees/login/Test.User")
+        mockMvc.perform(put("/api/v1/trainees/login/Test.User")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(passwords)))
                 .andExpect(status().isBadRequest())
@@ -107,7 +107,7 @@ class TraineeControllerTest {
                 .address("New Lane Avenue")
                 .build();
         when(traineeService.select("Test.User")).thenReturn(Optional.of(trainee));
-        mockMvc.perform(get("/trainees/Test.User"))
+        mockMvc.perform(get("/api/v1/trainees/Test.User"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"firstName\":\"Test\",\"lastName\":\"User\"" +
                         ",\"dateOfBirth\":\"1989-10-12\",\"address\":\"New Lane Avenue\"" +
@@ -116,7 +116,7 @@ class TraineeControllerTest {
 
     @Test
     void getTraineeShouldReturnNotFoundWhenUserNonExistent() throws Exception {
-        mockMvc.perform(get("/trainees/Non.Existent"))
+        mockMvc.perform(get("/api/v1/trainees/Non.Existent"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Trainee with username Non.Existent was not found"));
     }
@@ -141,7 +141,7 @@ class TraineeControllerTest {
                 .build();
         when(traineeService.update(eq("Test.User"), any())).thenReturn("Updated.User");
         when(traineeService.select("Updated.User")).thenReturn(Optional.of(updated));
-        mockMvc.perform(put("/trainees/profile/Test.User")
+        mockMvc.perform(put("/api/v1/trainees/profile/Test.User")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(requestTrainee)))
                 .andExpect(status().isOk())
@@ -161,7 +161,7 @@ class TraineeControllerTest {
                 .isActive("true")
                 .build();
         when(traineeService.update(anyString(), any())).thenReturn("Updated.NonExistent");
-        mockMvc.perform(put("/trainees/profile/Test.User")
+        mockMvc.perform(put("/api/v1/trainees/profile/Test.User")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(requestTrainee)))
                 .andExpect(status().isNotFound())
@@ -171,7 +171,7 @@ class TraineeControllerTest {
     @Test
     void deleteTraineeShouldTryToDeleteTrainee() throws Exception {
         doNothing().when(traineeService).delete("Test.User");
-        mockMvc.perform(delete("/trainees/Test.User"))
+        mockMvc.perform(delete("/api/v1/trainees/Test.User"))
                 .andExpect(status().isNoContent());
     }
 
@@ -201,7 +201,7 @@ class TraineeControllerTest {
                 .build();
         when(traineeService.selectNotAssignedTrainers("Test.User"))
                 .thenReturn(List.of(first, second));
-        mockMvc.perform(get("/trainees/not-assigned-trainers/Test.User"))
+        mockMvc.perform(get("/api/v1/trainees/not-assigned-trainers/Test.User"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("[{\"firstName\":\"First\",\"lastName\":\"Trainer\"," +
                         "\"specialization\":{\"name\":\"Boxing\",\"id\":100},\"username\":\"First.Trainer\"}" +
@@ -239,7 +239,7 @@ class TraineeControllerTest {
         doNothing().when(traineeService).updateTrainers(anyString(), any());
         when(traineeService.select("Test.User")).thenReturn(Optional.of(trainee));
         doNothing().when(traineeService).loadDependencies(any());
-        mockMvc.perform(put("/trainees/Test.User/trainers")
+        mockMvc.perform(put("/api/v1/trainees/Test.User/trainers")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(mapper.writeValueAsString(List.of(pair))))
                 .andExpect(status().isOk())
@@ -254,7 +254,7 @@ class TraineeControllerTest {
                 .required(true)
                 .build();
         doNothing().when(traineeService).updateTrainers(anyString(), any());
-        mockMvc.perform(put("/trainees/Non.Existent/trainers")
+        mockMvc.perform(put("/api/v1/trainees/Non.Existent/trainers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(List.of(pair))))
                 .andExpect(status().isNotFound())
@@ -280,7 +280,7 @@ class TraineeControllerTest {
         doNothing().when(traineeService).updateTrainers(anyString(), any());
         when(traineeService.select("Test.User")).thenReturn(Optional.of(trainee));
         doNothing().when(traineeService).loadDependencies(any());
-        mockMvc.perform(put("/trainees/Test.User/trainers")
+        mockMvc.perform(put("/api/v1/trainees/Test.User/trainers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(List.of(pair))))
                 .andExpect(status().isOk())
@@ -290,7 +290,7 @@ class TraineeControllerTest {
     @Test
     void changeActivityStatusShouldTryToChangeStatus() throws Exception {
         doNothing().when(traineeService).changeActivityStatus("Test.User", false);
-        mockMvc.perform(patch("/trainees/activity-status/Test.User?isActive=false"))
+        mockMvc.perform(patch("/api/v1/trainees/activity-status/Test.User?isActive=false"))
                 .andExpect(status().isNoContent());
     }
 }

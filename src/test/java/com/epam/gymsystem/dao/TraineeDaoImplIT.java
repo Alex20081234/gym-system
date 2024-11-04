@@ -16,11 +16,13 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class TraineeDaoImplTest {
+class TraineeDaoImplIT {
     @Autowired
     private TraineeDaoImpl traineeDao;
     @Autowired
     private TrainerDaoImpl trainerDao;
+    @Autowired
+    private TrainingDaoImpl trainingDao;
     @Autowired
     private EntityManager entityManager;
     private Trainee initial;
@@ -122,15 +124,22 @@ class TraineeDaoImplTest {
                 .specialization(entityManager.find(TrainingType.class, 4))
                 .build();
         trainerDao.create(trainer);
+        Training training = Training.builder()
+                .trainee(initial)
+                .trainer(trainer)
+                .trainingDate(LocalDate.now())
+                .trainingName("Test training")
+                .duration(60)
+                .trainingType(entityManager.find(TrainingType.class, 1))
+                .build();
+        trainingDao.create(training);
         trainerDao.create(trainer2);
         List<Trainer> trainers = traineeDao.selectNotAssignedTrainers(traineeDao.select("Test.Trainee").orElse(null));
         cleanUp("Test.Trainee");
         cleanTrainer(trainerDao.select("Test.Trainer").orElse(null));
         cleanTrainer(trainerDao.select("Test.Trainer2").orElse(null));
         assertNotNull(trainers);
-        trainers.forEach(t -> {
-            assertTrue(t.getUsername().equals("Test.Trainer") || t.getUsername().equals("Test.Trainer2"));
-        });
+        assertEquals("Test.Trainer2", trainers.get(0).getUsername());
     }
 
     @Test
@@ -252,5 +261,35 @@ class TraineeDaoImplTest {
         assertNotNull(usernames);
         assertTrue(usernames.contains("Test.Trainee"));
         assertTrue(usernames.contains("Test.Trainee2"));
+    }
+
+    @Test
+    void loadDependenciesShouldRefreshObject() {
+        traineeDao.create(initial);
+        Integer traineeId = initial.getId();
+        TrainingType trainingType = entityManager.find(TrainingType.class, 1);
+        Trainer trainer = Trainer.builder()
+                .username("Test.Trainer")
+                .password("password")
+                .firstName("Test")
+                .lastName("Trainer")
+                .isActive(true)
+                .trainees(new HashSet<>())
+                .trainings(new ArrayList<>())
+                .specialization(trainingType)
+                .build();
+        trainerDao.create(trainer);
+        Integer trainerId = trainer.getId();
+        String sql = "insert into trainee_trainer (trainee_id, trainer_id) values (?, ?)";
+        entityManager.createNativeQuery(sql)
+                .setParameter(1, traineeId)
+                .setParameter(2, trainerId)
+                .executeUpdate();
+        assertNull(initial.getTrainers());
+        traineeDao.loadDependencies(initial);
+        assertFalse(initial.getTrainers().isEmpty());
+        assertTrue(initial.getTrainers().contains(trainer));
+        cleanUp("Test.Trainee");
+        cleanTrainer(trainer);
     }
 }

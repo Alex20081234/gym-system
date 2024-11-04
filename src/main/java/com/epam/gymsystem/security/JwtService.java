@@ -1,38 +1,33 @@
 package com.epam.gymsystem.security;
 
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Base64;
 import java.util.Date;
-import java.util.List;
+import com.epam.gymsystem.dao.BlacklistDao;
+import com.epam.gymsystem.domain.Token;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
 import io.jsonwebtoken.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
-    private final SecretKey secretKey;
-    private final List<String> blacklist;
+    private final BlacklistDao dao;
+
+    @Value("${gym-system.secretKey}")
+    private String key;
 
     @Value("${gym-system.jwtExpirationMs}")
     private long jwtExpirationMs;
-
-    public JwtService() {
-        KeyGenerator keyGenerator;
-        try {
-            keyGenerator = KeyGenerator.getInstance("HmacSHA256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-        keyGenerator.init(256);
-        secretKey = keyGenerator.generateKey();
-        blacklist = new ArrayList<>();
-    }
 
     public String generateJwtToken(Authentication authentication) {
         User userPrincipal = (User) authentication.getPrincipal();
@@ -40,18 +35,18 @@ public class JwtService {
                 .subject((userPrincipal.getUsername()))
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .signWith(secretKey)
+                .signWith(secretKey())
                 .compact();
     }
 
     public String getUserNameFromJwtToken(String token) {
-        return Jwts.parser().verifyWith(secretKey).build()
+        return Jwts.parser().verifyWith(secretKey()).build()
                 .parseSignedClaims(token).getPayload().getSubject();
     }
 
     public boolean validateJwtToken(String token) {
         try {
-            Jwts.parser().verifyWith(secretKey).build().parse(token);
+            Jwts.parser().verifyWith(secretKey()).build().parse(token);
             return true;
         } catch (Exception e) {
             return false;
@@ -59,11 +54,15 @@ public class JwtService {
     }
 
     public boolean isTokenBlackListed(String token) {
-        return blacklist.contains(token);
+        return dao.isBlacklisted(token);
     }
 
     public void blacklistToken(String token) {
-        blacklist.add(token);
+        Token current = Token.builder()
+                .id(token)
+                .expireDate(getExpireDateFromJwtToken(token))
+                .build();
+        dao.blacklist(current);
     }
 
     public String parseJwt(HttpServletRequest request) {
@@ -72,5 +71,16 @@ public class JwtService {
             return headerAuth.substring(7);
         }
         return null;
+    }
+
+    private SecretKey secretKey() {
+        byte[] decodedKey = Base64.getDecoder().decode(key);
+        return new SecretKeySpec(decodedKey, "HmacSHA256");
+    }
+
+    private LocalDate getExpireDateFromJwtToken(String token) {
+        return Jwts.parser().verifyWith(secretKey()).build()
+                .parseSignedClaims(token).getPayload().getExpiration()
+                .toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     }
 }
