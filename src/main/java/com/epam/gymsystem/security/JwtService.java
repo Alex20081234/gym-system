@@ -7,8 +7,7 @@ import java.util.Date;
 import com.epam.gymsystem.dao.BlacklistDao;
 import com.epam.gymsystem.domain.Token;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
@@ -19,15 +18,20 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 @Service
-@RequiredArgsConstructor
 public class JwtService {
     private final BlacklistDao dao;
+    private final String key;
+    private final long jwtExpirationMs;
 
-    @Value("${gym-system.secretKey}")
-    private String key;
-
-    @Value("${gym-system.jwtExpirationMs}")
-    private long jwtExpirationMs;
+    @Autowired
+    public JwtService(
+            BlacklistDao dao,
+            @Value("${gym-system.secretKey}") String key,
+            @Value("${gym-system.jwtExpirationMs}") long jwtExpirationMs) {
+        this.dao = dao;
+        this.key = key;
+        this.jwtExpirationMs = jwtExpirationMs;
+    }
 
     public String generateJwtToken(Authentication authentication) {
         User userPrincipal = (User) authentication.getPrincipal();

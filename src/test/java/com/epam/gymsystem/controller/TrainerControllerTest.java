@@ -3,8 +3,8 @@ package com.epam.gymsystem.controller;
 import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.domain.TrainingType;
 import com.epam.gymsystem.dto.*;
-import com.epam.gymsystem.service.AuthServiceImpl;
-import com.epam.gymsystem.service.TrainerServiceImpl;
+import com.epam.gymsystem.service.AuthService;
+import com.epam.gymsystem.service.TrainerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,10 +28,10 @@ class TrainerControllerTest {
     private MockMvc mockMvc;
 
     @Mock
-    private TrainerServiceImpl trainerService;
+    private TrainerService trainerService;
 
     @Mock
-    private AuthServiceImpl authService;
+    private AuthService authService;
 
     @InjectMocks
     private TrainerController trainerController;

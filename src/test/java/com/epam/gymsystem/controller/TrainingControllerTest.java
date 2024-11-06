@@ -27,13 +27,13 @@ class TrainingControllerTest {
     private MockMvc mockMvc;
 
     @Mock
-    private TrainerServiceImpl trainerService;
+    private TrainerService trainerService;
 
     @Mock
-    private TraineeServiceImpl traineeService;
+    private TraineeService traineeService;
 
     @Mock
-    private TrainingServiceImpl trainingService;
+    private TrainingService trainingService;
 
     @InjectMocks
     private TrainingController trainingController;

@@ -1,9 +1,8 @@
 package com.epam.gymsystem.security;
 
-import com.epam.gymsystem.dao.BlacklistDaoImpl;
+import com.epam.gymsystem.dao.BlacklistDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -11,15 +10,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class JwtServiceTest {
     @Mock
-    private BlacklistDaoImpl dao;
-    @InjectMocks
+    private BlacklistDao dao;
     private JwtService jwtService;
     private Authentication authentication;
     private String testToken;
@@ -28,8 +25,7 @@ class JwtServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        ReflectionTestUtils.setField(jwtService, "jwtExpirationMs", 600000);
-        ReflectionTestUtils.setField(jwtService, "key", "A2L8YVx0gfXUJpA5p3lBzX9K8klcmXUOvPjH4FbbJCI=");
+        jwtService = new JwtService(dao, "A2L8YVx0gfXUJpA5p3lBzX9K8klcmXUOvPjH4FbbJCI=", 600000);
         resetAuthentication();
         testToken = jwtService.generateJwtToken(authentication);
         counter++;

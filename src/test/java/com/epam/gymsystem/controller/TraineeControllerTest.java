@@ -4,7 +4,7 @@ import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.domain.TrainingType;
 import com.epam.gymsystem.dto.*;
-import com.epam.gymsystem.service.AuthServiceImpl;
+import com.epam.gymsystem.service.AuthService;
 import com.epam.gymsystem.service.TraineeService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +35,7 @@ class TraineeControllerTest {
     private TraineeService traineeService;
 
     @Mock
-    private AuthServiceImpl authService;
+    private AuthService authService;
 
     @InjectMocks
     private TraineeController traineeController;

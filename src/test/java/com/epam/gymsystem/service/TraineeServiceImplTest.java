@@ -1,7 +1,7 @@
 package com.epam.gymsystem.service;
 
 import com.epam.gymsystem.common.UserNotFoundException;
-import com.epam.gymsystem.dao.TraineeDaoImpl;
+import com.epam.gymsystem.dao.TraineeDao;
 import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.*;
 
 class TraineeServiceImplTest {
     @Mock
-    private TraineeDaoImpl dao;
+    private TraineeDao dao;
     @Mock
     private PasswordEncoder encoder;
     @InjectMocks
