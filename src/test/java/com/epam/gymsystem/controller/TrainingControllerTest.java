@@ -27,13 +27,13 @@ class TrainingControllerTest {
     private MockMvc mockMvc;
 
     @Mock
-    private TrainerServiceImpl trainerService;
+    private TrainerService trainerService;
 
     @Mock
-    private TraineeServiceImpl traineeService;
+    private TraineeService traineeService;
 
     @Mock
-    private TrainingServiceImpl trainingService;
+    private TrainingService trainingService;
 
     @InjectMocks
     private TrainingController trainingController;
@@ -78,7 +78,7 @@ class TrainingControllerTest {
         when(trainerService.select("Test.Trainer")).thenReturn(Optional.of(trainer));
         when(traineeService.select("Test.Trainee")).thenReturn(Optional.of(trainee));
         doNothing().when(trainingService).create(any());
-        mockMvc.perform(post("/trainings/Test.Trainee")
+        mockMvc.perform(post("/api/v1/trainings/Test.Trainee")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(mapper.writeValueAsString(training)))
                 .andExpect(status().isNoContent());
@@ -93,7 +93,7 @@ class TrainingControllerTest {
                 .date("2024-10-17")
                 .duration(60)
                 .build();
-        mockMvc.perform(post("/trainings/Non.Existent")
+        mockMvc.perform(post("/api/v1/trainings/Non.Existent")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(mapper.writeValueAsString(requestTraining)))
                 .andExpect(status().isNotFound())
@@ -101,7 +101,7 @@ class TrainingControllerTest {
         requestTraining.setTraineeUsername("Test.User");
         requestTraining.setTrainerUsername("Non.Existent");
         when(traineeService.select("Test.User")).thenReturn(Optional.of(new Trainee()));
-        mockMvc.perform(post("/trainings/Test.User")
+        mockMvc.perform(post("/api/v1/trainings/Test.User")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(requestTraining)))
                 .andExpect(status().isNotFound())
@@ -115,16 +115,16 @@ class TrainingControllerTest {
                 .id(100)
                 .build();
         when(trainingService.selectAllTypes()).thenReturn(List.of(type));
-        mockMvc.perform(get("/trainings/types/Test.User"))
+        mockMvc.perform(get("/api/v1/trainings/types/Test.User"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("[{\"name\":\"Boxing\",\"id\":100}]"));
     }
 
     @Test
     void getTrainingsShouldTryToSelectTrainingsWithDifferentCriteria() throws Exception {
-        getTrainingsByCriteria("/trainings/Test.Trainee?" +
+        getTrainingsByCriteria("/api/v1/trainings/Test.Trainee?" +
                 "startDate=2024-10-16&endDate=2024-11-17&partnerName=Test.Trainer&typeName=Boxing");
-        getTrainingsByCriteria("/trainings/Test.Trainee");
+        getTrainingsByCriteria("/api/v1/trainings/Test.Trainee");
     }
 
     void getTrainingsByCriteria(String url) throws Exception {

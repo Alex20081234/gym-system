@@ -217,5 +217,15 @@ class MappingUtilsTest {
         assertThat(responseTraining.getDuration()).isEqualTo(60);
         assertThat(responseTraining.getPartnerName()).isEqualTo("anna123");
         assertThat(responseTraining.getType()).isEqualTo(ShortTrainingType.builder().name("Yoga").build());
+        trainee = Trainee.builder().username("anna123").firstName("Anna").build();
+        trainer = Trainer.builder().username("john123").firstName("John").build();
+        training.setTrainer(trainer);
+        training.setTrainee(trainee);
+        responseTraining = MappingUtils.fromTrainingToResponseTraining(training, "john123");
+        assertThat(responseTraining.getName()).isEqualTo("Yoga");
+        assertThat(responseTraining.getDate()).isEqualTo("2023-10-01");
+        assertThat(responseTraining.getDuration()).isEqualTo(60);
+        assertThat(responseTraining.getPartnerName()).isEqualTo("anna123");
+        assertThat(responseTraining.getType()).isEqualTo(ShortTrainingType.builder().name("Yoga").build());
     }
 }

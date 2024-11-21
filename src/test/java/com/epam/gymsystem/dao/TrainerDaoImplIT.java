@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -18,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class TrainerDaoImplTest {
+class TrainerDaoImplIT {
     @Autowired
     private TrainerDaoImpl trainerDao;
     @Autowired
@@ -166,5 +168,33 @@ class TrainerDaoImplTest {
         assertNotNull(usernames);
         assertTrue(usernames.contains("Test.Trainer"));
         assertTrue(usernames.contains("Test.Trainer2"));
+    }
+
+    @Test
+    void loadDependenciesShouldRefreshObject() {
+        trainerDao.create(initial);
+        Integer trainerId = initial.getId();
+        Trainee trainee = Trainee.builder()
+                .username("Test.Trainee")
+                .password("password")
+                .firstName("Test")
+                .lastName("User")
+                .isActive(true)
+                .dateOfBirth(LocalDate.of(1990, 1, 1))
+                .address("Test address")
+                .build();
+        traineeDao.create(trainee);
+        Integer traineeId = trainee.getId();
+        String sql = "insert into trainee_trainer (trainee_id, trainer_id) values (?, ?)";
+        entityManager.createNativeQuery(sql)
+                .setParameter(1, traineeId)
+                .setParameter(2, trainerId)
+                .executeUpdate();
+        assertNull(initial.getTrainees());
+        trainerDao.loadDependencies(initial);
+        assertFalse(initial.getTrainees().isEmpty());
+        assertTrue(initial.getTrainees().contains(trainee));
+        cleanUp("Test.Trainer");
+        entityManager.remove(trainee);
     }
 }

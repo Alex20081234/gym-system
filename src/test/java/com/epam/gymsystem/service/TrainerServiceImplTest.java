@@ -1,7 +1,7 @@
 package com.epam.gymsystem.service;
 
 import com.epam.gymsystem.common.UserNotFoundException;
-import com.epam.gymsystem.dao.TrainerDaoImpl;
+import com.epam.gymsystem.dao.TrainerDao;
 import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.domain.TrainingType;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.CollectionUtils;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,7 +17,9 @@ import static org.mockito.Mockito.*;
 
 class TrainerServiceImplTest {
     @Mock
-    private TrainerDaoImpl dao;
+    private TrainerDao dao;
+    @Mock
+    private PasswordEncoder encoder;
     @InjectMocks
     private TrainerServiceImpl service;
     private Trainer trainer;
@@ -38,6 +41,7 @@ class TrainerServiceImplTest {
     void createShouldTryToAddTrainerToDatabase() {
         doNothing().when(dao).create(any(Trainer.class));
         when(dao.selectUsernames()).thenReturn(Collections.emptyList());
+        when(encoder.encode(anyString())).thenReturn("password");
         service.create(trainer);
         verify(dao, times(1)).create(trainer);
     }
@@ -47,11 +51,13 @@ class TrainerServiceImplTest {
         RuntimeException e = assertThrows(IllegalArgumentException.class, () -> service.create(null));
         assertEquals("Trainer is not valid", e.getMessage());
         when(dao.selectUsernames()).thenReturn(Collections.emptyList());
+        when(encoder.encode(anyString())).thenReturn("password");
         trainer.setIsActive(null);
         e = assertThrows(IllegalArgumentException.class, () -> service.create(trainer));
         assertEquals("Trainer is not valid", e.getMessage());
         trainer.setIsActive(true);
         when(dao.selectUsernames()).thenReturn(Collections.emptyList());
+        when(encoder.encode(anyString())).thenReturn("password");
         trainer.setSpecialization(null);
         e = assertThrows(IllegalArgumentException.class, () -> service.create(trainer));
         assertEquals("Trainer is not valid", e.getMessage());
@@ -61,6 +67,7 @@ class TrainerServiceImplTest {
     void changePasswordShouldTryToMakeChangeToDatabase() {
         doNothing().when(dao).changePassword(any(), anyString());
         doReturn(Optional.of(trainer)).when(dao).select(anyString());
+        when(encoder.encode(anyString())).thenReturn("newpassword");
         service.changePassword("Test.Trainer", "newpassword");
         verify(dao, times(1)).changePassword("Test.Trainer", "newpassword");
     }
@@ -90,11 +97,15 @@ class TrainerServiceImplTest {
                 .trainings(new ArrayList<>())
                 .trainees(new HashSet<>())
                 .build();
-        when(dao.select(anyString())).thenReturn(Optional.of(trainer));
-        when(dao.update(any(), any(Trainer.class))).thenReturn("Updated.Trainer");
-        when(dao.selectUsernames()).thenReturn(Collections.emptyList());
-        service.update("Test.Trainer", updates);
-        verify(dao, times(1)).update("Test.Trainer", updated);
+        for (int i = 0; i < 2; i++) {
+            when(dao.select(anyString())).thenReturn(Optional.of(trainer));
+            when(encoder.encode("password")).thenReturn("password");
+            when(dao.update(any(), any(Trainer.class))).thenReturn("Updated.Trainer");
+            when(dao.selectUsernames()).thenReturn(Collections.emptyList());
+            service.update("Test.Trainer", updates);
+            verify(dao, times(i + 1)).update("Test.Trainer", updated);
+            updates.setPassword("password");
+        }
     }
 
     @Test

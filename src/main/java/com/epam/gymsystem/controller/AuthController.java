@@ -1,10 +1,20 @@
 package com.epam.gymsystem.controller;
 
+import com.epam.gymsystem.dao.UserTriesDao;
+import com.epam.gymsystem.security.JwtService;
 import com.epam.gymsystem.service.AuthService;
-import lombok.AllArgsConstructor;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,9 +26,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 
 @RestController
-@AllArgsConstructor
+@RequestMapping("/api/v1")
+@RequiredArgsConstructor
 public class AuthController {
+    private final UserTriesDao dao;
     private final AuthService authService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    private final PasswordEncoder encoder;
+
+    @Value("${gym-system.maxFailedAttempts}")
+    private int maxFailedAttempts;
 
     @Operation(summary = "User login", description = "Logs in a trainee or trainer based on the provided username and password. Returns a token upon successful login.")
     @ApiResponses(value = {
@@ -40,10 +58,42 @@ public class AuthController {
     public ResponseEntity<String> login(
             @Parameter(description = "Username of the user", required = true) @RequestParam String username,
             @Parameter(description = "Password of the user", required = true) @RequestParam String password) {
+        if (dao.isBlocked(username)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("You have been blocked for 5 minutes");
+        }
         String foundPassword = authService.selectPassword(username);
-        if (!foundPassword.equals(password)) {
+        if (!encoder.matches(password, foundPassword)) {
+            dao.incrementAttemptsOrCreateEntry(username);
+            if (dao.attempts(username) == maxFailedAttempts) {
+                dao.block(username);
+            }
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
         }
-        return ResponseEntity.ok("Login successful");
+        String token = authenticate(username, password);
+        return ResponseEntity.ok(token);
+    }
+
+    @GetMapping("/logout")
+    @Operation(summary = "Logout User",
+            description = "Logs out the user by blacklisting the provided JWT token.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Successful logout. The token has been blacklisted."),
+            @ApiResponse(responseCode = "400", description = "Bad Request. The request is malformed."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized. The provided token is invalid or expired."),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error. An error occurred while processing the request.")
+    })
+    public ResponseEntity<Void> logout(
+            @Parameter(description = "HTTP request object containing the user's JWT token.")
+            HttpServletRequest request) {
+        String token = jwtService.parseJwt(request);
+        jwtService.blacklistToken(token);
+        return ResponseEntity.noContent().build();
+    }
+
+    private String authenticate(String username, String password) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return jwtService.generateJwtToken(authentication);
     }
 }

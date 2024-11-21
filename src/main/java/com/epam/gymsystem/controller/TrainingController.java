@@ -11,6 +11,7 @@ import com.epam.gymsystem.service.TraineeService;
 import com.epam.gymsystem.service.TrainerService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,7 +23,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/trainings")
+@RequestMapping("/api/v1/trainings")
 @AllArgsConstructor
 public class TrainingController {
     private static final String USER_NOT_FOUND = "User with username %s was not found";
@@ -43,6 +44,7 @@ public class TrainingController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @PostMapping("/{username}")
     public ResponseEntity<Void> addTraining(@PathVariable String username,
                                             @RequestBody RequestTraining requestTraining) {
@@ -73,6 +75,7 @@ public class TrainingController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @GetMapping("/types/{username}")
     public ResponseEntity<List<ShortTrainingType>> getTrainingTypes(@PathVariable String username) {
         List<TrainingType> types = trainingService.selectAllTypes();
@@ -94,6 +97,7 @@ public class TrainingController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @GetMapping("/{username}")
     public ResponseEntity<List<ResponseTraining>> getTrainings(@PathVariable String username,
                                                                @RequestParam(required = false) String startDate,

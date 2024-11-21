@@ -1,6 +1,6 @@
 package com.epam.gymsystem.service;
 
-import com.epam.gymsystem.dao.AuthDaoImpl;
+import com.epam.gymsystem.dao.AuthDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -12,7 +12,7 @@ import static org.mockito.Mockito.*;
 
 class AuthServiceTest {
     @Mock
-    private AuthDaoImpl dao;
+    private AuthDao dao;
     @InjectMocks
     private AuthServiceImpl service;
 

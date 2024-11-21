@@ -1,7 +1,7 @@
 package com.epam.gymsystem.service;
 
-import com.epam.gymsystem.dao.TrainingDaoImpl;
-import com.epam.gymsystem.dao.TrainingTypeDaoImpl;
+import com.epam.gymsystem.dao.TrainingDao;
+import com.epam.gymsystem.dao.TrainingTypeDao;
 import com.epam.gymsystem.domain.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,9 +18,9 @@ import static org.mockito.Mockito.*;
 
 class TrainingServiceImplTest {
     @Mock
-    private TrainingDaoImpl dao;
+    private TrainingDao dao;
     @Mock
-    private TrainingTypeDaoImpl typeDao;
+    private TrainingTypeDao typeDao;
     @InjectMocks
     private TrainingServiceImpl service;
     private final Trainee trainee = Trainee.builder()

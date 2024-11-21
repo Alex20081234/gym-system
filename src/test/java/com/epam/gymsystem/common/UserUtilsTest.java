@@ -23,6 +23,14 @@ class UserUtilsTest {
         String username = UserUtils.generateUsername("Jane", "Doe", Collections.emptyList());
         assertNotNull(username);
         assertEquals("Jane.Doe", username);
+        username = UserUtils.generateUsername("Jane", "Doe", List.of("Not.Same"));
+        assertNotNull(username);
+        assertEquals("Jane.Doe", username);
+        List<String> list = new ArrayList<>();
+        list.add(null);
+        username = UserUtils.generateUsername("Jane", "Doe", list);
+        assertNotNull(username);
+        assertEquals("Jane.Doe", username);
     }
 
     @Test
@@ -86,6 +94,7 @@ class UserUtilsTest {
                 .trainings(List.of(Training.builder().id(1).build()))
                 .trainers(Set.of(Trainer.builder().username("Test.Trainer").build()))
                 .build();
+        areSameUsers(expected, mergedUser);
         areSameTrainees(expected, (Trainee) mergedUser);
     }
 
@@ -121,7 +130,67 @@ class UserUtilsTest {
                 .trainings(List.of(Training.builder().id(1).build()))
                 .trainees(Set.of(Trainee.builder().username("Test.Trainee").build()))
                 .build();
+        areSameUsers(expected, mergedUser);
         areSameTrainers(expected, (Trainer) mergedUser);
+    }
+
+    @Test
+    void mergeUsersShouldReturnMerged() {
+        User initial = new TestUser();
+        initial.setFirstName("First");
+        initial.setLastName("User");
+        initial.setPassword("password");
+        initial.setUsername("First.User");
+        initial.setIsActive(true);
+        User updates = new TestUser();
+        updates.setPassword("newpassword");
+        updates.setIsActive(false);
+        User merged = UserUtils.mergeUsers(initial, updates, Collections.emptyList());
+        User expected = new TestUser();
+        expected.setFirstName("First");
+        expected.setLastName("User");
+        expected.setPassword("newpassword");
+        expected.setUsername("First.User");
+        expected.setIsActive(false);
+        areSameUsers(expected, merged);
+    }
+
+    @Test
+    void mergeUsersShouldReturnMergedWhenDifferentTypes() {
+        User initial = new Trainee();
+        initial.setFirstName("First");
+        initial.setLastName("User");
+        initial.setPassword("password");
+        initial.setUsername("First.User");
+        initial.setIsActive(true);
+        User updates = new TestUser();
+        updates.setPassword("newpassword");
+        updates.setIsActive(false);
+        User merged = UserUtils.mergeUsers(initial, updates, Collections.emptyList());
+        User expected = new TestUser();
+        expected.setFirstName("First");
+        expected.setLastName("User");
+        expected.setPassword("newpassword");
+        expected.setUsername("First.User");
+        expected.setIsActive(false);
+        areSameUsers(expected, merged);
+        initial = new Trainer();
+        initial.setFirstName("First");
+        initial.setLastName("User");
+        initial.setPassword("password");
+        initial.setUsername("First.User");
+        initial.setIsActive(true);
+        updates = new TestUser();
+        updates.setPassword("newpassword");
+        updates.setIsActive(false);
+        merged = UserUtils.mergeUsers(initial, updates, Collections.emptyList());
+        expected = new TestUser();
+        expected.setFirstName("First");
+        expected.setLastName("User");
+        expected.setPassword("newpassword");
+        expected.setUsername("First.User");
+        expected.setIsActive(false);
+        areSameUsers(expected, merged);
     }
 
     @Test
@@ -143,11 +212,6 @@ class UserUtilsTest {
     }
 
     void areSameTrainees(Trainee expected, Trainee actual) {
-        assertEquals(expected.getFirstName(), actual.getFirstName());
-        assertEquals(expected.getLastName(), actual.getLastName());
-        assertEquals(expected.getUsername(), actual.getUsername());
-        assertEquals(expected.getPassword(), actual.getPassword());
-        assertEquals(expected.getIsActive(), actual.getIsActive());
         assertEquals(expected.getDateOfBirth(), actual.getDateOfBirth());
         assertEquals(expected.getAddress(), actual.getAddress());
         assertEquals(expected.getTrainings(), actual.getTrainings());
@@ -155,13 +219,18 @@ class UserUtilsTest {
     }
 
     void areSameTrainers(Trainer expected, Trainer actual) {
+        assertEquals(expected.getTrainings(), actual.getTrainings());
+        assertEquals(expected.getSpecialization(), actual.getSpecialization());
+        assertEquals(expected.getTrainees(), actual.getTrainees());
+    }
+
+    void areSameUsers(User expected, User actual) {
         assertEquals(expected.getFirstName(), actual.getFirstName());
         assertEquals(expected.getLastName(), actual.getLastName());
         assertEquals(expected.getUsername(), actual.getUsername());
         assertEquals(expected.getPassword(), actual.getPassword());
         assertEquals(expected.getIsActive(), actual.getIsActive());
-        assertEquals(expected.getTrainings(), actual.getTrainings());
-        assertEquals(expected.getSpecialization(), actual.getSpecialization());
-        assertEquals(expected.getTrainees(), actual.getTrainees());
     }
+
+    private static class TestUser extends User {}
 }

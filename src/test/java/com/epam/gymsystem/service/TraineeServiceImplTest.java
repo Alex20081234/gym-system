@@ -1,7 +1,7 @@
 package com.epam.gymsystem.service;
 
 import com.epam.gymsystem.common.UserNotFoundException;
-import com.epam.gymsystem.dao.TraineeDaoImpl;
+import com.epam.gymsystem.dao.TraineeDao;
 import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.CollectionUtils;
 import java.time.LocalDate;
 import java.util.*;
@@ -17,7 +18,9 @@ import static org.mockito.Mockito.*;
 
 class TraineeServiceImplTest {
     @Mock
-    private TraineeDaoImpl dao;
+    private TraineeDao dao;
+    @Mock
+    private PasswordEncoder encoder;
     @InjectMocks
     private TraineeServiceImpl service;
     private Trainee trainee;
@@ -40,6 +43,7 @@ class TraineeServiceImplTest {
     void createShouldTryToAddTraineeToDatabase() {
         doNothing().when(dao).create(any(Trainee.class));
         when(dao.selectUsernames()).thenReturn(Collections.emptyList());
+        when(encoder.encode(anyString())).thenReturn("password");
         service.create(trainee);
         verify(dao, times(1)).create(trainee);
     }
@@ -57,6 +61,7 @@ class TraineeServiceImplTest {
     void changePasswordShouldTryToMakeChangeToDatabase() {
         doNothing().when(dao).changePassword(any(), anyString());
         doReturn(Optional.of(trainee)).when(dao).select(anyString());
+        when(encoder.encode(anyString())).thenReturn("newpassword");
         service.changePassword("Test.Trainee", "newpassword");
         verify(dao, times(1)).changePassword("Test.Trainee", "newpassword");
     }
@@ -87,11 +92,15 @@ class TraineeServiceImplTest {
                 .trainings(new ArrayList<>())
                 .trainers(new HashSet<>())
                 .build();
-        when(dao.select(anyString())).thenReturn(Optional.of(trainee));
-        when(dao.update(any(), any(Trainee.class))).thenReturn("Updated.Trainee");
-        when(dao.selectUsernames()).thenReturn(Collections.emptyList());
-        service.update("Test.Trainee", updates);
-        verify(dao, times(1)).update("Test.Trainee", updated);
+        for (int i = 0; i < 2; i++) {
+            when(dao.select(anyString())).thenReturn(Optional.of(trainee));
+            when(encoder.encode("password")).thenReturn("password");
+            when(dao.update(any(), any(Trainee.class))).thenReturn("Updated.Trainee");
+            when(dao.selectUsernames()).thenReturn(Collections.emptyList());
+            service.update("Test.Trainee", updates);
+            verify(dao, times(i + 1)).update("Test.Trainee", updated);
+            updates.setPassword("password");
+        }
     }
 
     @Test

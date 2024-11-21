@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class TrainingTypeDaoImplTest {
+class TrainingTypeDaoImplIT {
     @Autowired
     private TrainingTypeDaoImpl dao;
 

@@ -8,6 +8,7 @@ import com.epam.gymsystem.service.AuthService;
 import com.epam.gymsystem.service.TrainerService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -18,7 +19,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import java.net.URI;
 
 @RestController
-@RequestMapping("/trainers")
+@RequestMapping("/api/v1/trainers")
 @AllArgsConstructor
 public class TrainerController {
     private static final String NOT_FOUND = "Trainer with username %s was not found";
@@ -58,6 +59,7 @@ public class TrainerController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @PutMapping("/login/{username}")
     public ResponseEntity<Void> changeLogin(@PathVariable String username,
                                             @RequestBody Passwords passwords) {
@@ -85,6 +87,7 @@ public class TrainerController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @GetMapping("/{username}")
     public ResponseEntity<ResponseTrainer> getTrainer(@PathVariable String username) {
         Trainer trainer = trainerService.select(username)
@@ -107,6 +110,7 @@ public class TrainerController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @PutMapping("/profile/{username}")
     public ResponseEntity<ResponseTrainerWithUsername> updateTrainer(@PathVariable String username,
                                                                      @RequestBody ExtendedRequestTrainer extendedRequestTrainer) {
@@ -130,6 +134,7 @@ public class TrainerController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = "Unexpected error occurred: <error details>")))
     })
+    @Secured("ROLE_USER")
     @PatchMapping("/activity-status/{username}")
     public ResponseEntity<Void> changeActivityStatus(@PathVariable String username, @RequestParam Boolean isActive) {
         trainerService.changeActivityStatus(username, isActive);
