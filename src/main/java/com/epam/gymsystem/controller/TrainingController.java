@@ -3,10 +3,9 @@ package com.epam.gymsystem.controller;
 import com.epam.gymsystem.common.MappingUtils;
 import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.domain.*;
-import com.epam.gymsystem.dto.ResponseTraining;
+import com.epam.gymsystem.dto.*;
+import com.epam.gymsystem.service.MicroserviceClientService;
 import com.epam.gymsystem.service.TrainingService;
-import com.epam.gymsystem.dto.RequestTraining;
-import com.epam.gymsystem.dto.ShortTrainingType;
 import com.epam.gymsystem.service.TraineeService;
 import com.epam.gymsystem.service.TrainerService;
 import lombok.AllArgsConstructor;
@@ -30,6 +29,7 @@ public class TrainingController {
     private final TrainingService trainingService;
     private final TrainerService trainerService;
     private final TraineeService traineeService;
+    private final MicroserviceClientService microserviceClientService;
 
     @Operation(summary = "Add a new training")
     @ApiResponses(value = {
@@ -57,6 +57,18 @@ public class TrainingController {
         training.setTrainee(trainee);
         training.setTrainingType(trainer.getSpecialization());
         trainingService.create(training);
+        if (microserviceClientService.isServiceAvailable("microservice")) {
+            RequestParams requestParams = RequestParams.builder()
+                    .username(trainer.getUsername())
+                    .firstName(trainer.getFirstName())
+                    .lastName(trainer.getLastName())
+                    .isActive(trainer.getIsActive())
+                    .date(training.getTrainingDate())
+                    .duration(training.getDuration())
+                    .type(ActionType.ADD)
+                    .build();
+            microserviceClientService.submitWorkloadChanges(requestParams);
+        }
         return ResponseEntity.noContent().build();
     }
 

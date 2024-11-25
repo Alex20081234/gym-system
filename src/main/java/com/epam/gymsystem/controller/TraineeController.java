@@ -3,10 +3,13 @@ package com.epam.gymsystem.controller;
 import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
+import com.epam.gymsystem.domain.Training;
 import com.epam.gymsystem.dto.*;
 import com.epam.gymsystem.service.AuthService;
 import com.epam.gymsystem.common.MappingUtils;
+import com.epam.gymsystem.service.MicroserviceClientService;
 import com.epam.gymsystem.service.TraineeService;
+import com.epam.gymsystem.service.TrainingService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -29,7 +32,9 @@ import java.util.Map;
 public class TraineeController {
     private static final String NOT_FOUND = "Trainee with username %s was not found";
     private final TraineeService traineeService;
+    private final TrainingService trainingService;
     private final AuthService authService;
+    private final MicroserviceClientService microserviceClientService;
 
     @Operation(summary = "Register a new trainee")
     @ApiResponses(value = {
@@ -141,6 +146,21 @@ public class TraineeController {
     @Secured("ROLE_USER")
     @DeleteMapping("/{username}")
     public ResponseEntity<Void> deleteTrainee(@PathVariable String username) {
+        if (microserviceClientService.isServiceAvailable("microservice")) {
+            List<Training> trainings = trainingService.selectTrainings(username, null);
+            trainings.forEach(t -> {
+                RequestParams requestParams = RequestParams.builder()
+                        .username(t.getTrainer().getUsername())
+                        .firstName(t.getTrainer().getFirstName())
+                        .lastName(t.getTrainer().getLastName())
+                        .isActive(t.getTrainer().getIsActive())
+                        .date(t.getTrainingDate())
+                        .duration(t.getDuration())
+                        .type(ActionType.DELETE)
+                        .build();
+                microserviceClientService.submitWorkloadChanges(requestParams);
+            });
+        }
         traineeService.delete(username);
         return ResponseEntity.noContent().build();
     }
