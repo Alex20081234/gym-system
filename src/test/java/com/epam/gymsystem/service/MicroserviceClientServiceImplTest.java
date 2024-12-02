@@ -1,7 +1,7 @@
 package com.epam.gymsystem.service;
 
 import com.epam.gymsystem.dto.ActionType;
-import com.epam.gymsystem.dto.RequestParams;
+import com.epam.gymsystem.dto.SubmitWorkloadChangesRequestBody;
 import com.netflix.appinfo.InstanceInfo;
 import com.netflix.discovery.EurekaClient;
 import com.netflix.discovery.shared.Application;
@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
@@ -38,30 +39,32 @@ class MicroserviceClientServiceImplTest {
 
     @Test
     void submitChangesShouldTryToSubmitChanges() {
-        RequestParams params = RequestParams.builder()
-                .username("John.Doe")
-                .firstName("John")
-                .lastName("Doe")
-                .isActive(true)
-                .type(ActionType.ADD)
-                .date(LocalDate.of(2024, 10, 12))
-                .duration(10)
+        SubmitWorkloadChangesRequestBody params = SubmitWorkloadChangesRequestBody.builder()
+                .trainerUsername("John.Doe")
+                .trainerFirstName("John")
+                .trainerLastName("Doe")
+                .trainerIsActive(true)
+                .changeType(ActionType.ADD)
+                .trainingDate(LocalDate.of(2024, 10, 12))
+                .trainingDurationMinutes(10)
                 .build();
         InstanceInfo info = mock(InstanceInfo.class);
         when(eurekaClient.getNextServerFromEureka(anyString(), anyBoolean())).thenReturn(info);
         when(info.getHomePageUrl()).thenReturn("/home-page/");
         when(restTemplate.exchange(anyString(), any(), any(), (Class<Object>) any()))
                 .thenReturn(ResponseEntity.noContent().build());
-        service.submitWorkloadChanges(params);
+        service.submitWorkloadChanges(params, "Token");
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("username", params.getUsername());
-        requestBody.put("firstName", params.getFirstName());
-        requestBody.put("lastName", params.getLastName());
-        requestBody.put("isActive", params.getIsActive());
-        requestBody.put("date", params.getDate());
-        requestBody.put("duration", params.getDuration());
-        requestBody.put("type", params.getType());
-        HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(requestBody);
+        requestBody.put("trainerUsername", params.getTrainerUsername());
+        requestBody.put("trainerFirstName", params.getTrainerFirstName());
+        requestBody.put("trainerLastName", params.getTrainerLastName());
+        requestBody.put("trainerIsActive", params.getTrainerIsActive());
+        requestBody.put("trainingDate", params.getTrainingDate());
+        requestBody.put("trainingDurationMinutes", params.getTrainingDurationMinutes());
+        requestBody.put("changeType", params.getChangeType());
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.set("Authorization", "Token");
+        HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(requestBody, httpHeaders);
         verify(restTemplate, times(1)).exchange("/home-page/api/v1/workload/submit",
                 HttpMethod.PATCH,
                 httpEntity,

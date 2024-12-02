@@ -145,20 +145,21 @@ public class TraineeController {
     })
     @Secured("ROLE_USER")
     @DeleteMapping("/{username}")
-    public ResponseEntity<Void> deleteTrainee(@PathVariable String username) {
+    public ResponseEntity<Void> deleteTrainee(@PathVariable String username,
+                                              @RequestHeader("Authorization") String token) {
         if (microserviceClientService.isServiceAvailable("microservice")) {
             List<Training> trainings = trainingService.selectTrainings(username, null);
             trainings.forEach(t -> {
-                RequestParams requestParams = RequestParams.builder()
-                        .username(t.getTrainer().getUsername())
-                        .firstName(t.getTrainer().getFirstName())
-                        .lastName(t.getTrainer().getLastName())
-                        .isActive(t.getTrainer().getIsActive())
-                        .date(t.getTrainingDate())
-                        .duration(t.getDuration())
-                        .type(ActionType.DELETE)
+                SubmitWorkloadChangesRequestBody requestBody = SubmitWorkloadChangesRequestBody.builder()
+                        .trainerUsername(t.getTrainer().getUsername())
+                        .trainerFirstName(t.getTrainer().getFirstName())
+                        .trainerLastName(t.getTrainer().getLastName())
+                        .trainerIsActive(t.getTrainer().getIsActive())
+                        .trainingDate(t.getTrainingDate())
+                        .trainingDurationMinutes(t.getDuration())
+                        .changeType(ActionType.DELETE)
                         .build();
-                microserviceClientService.submitWorkloadChanges(requestParams);
+                microserviceClientService.submitWorkloadChanges(requestBody, token);
             });
         }
         traineeService.delete(username);

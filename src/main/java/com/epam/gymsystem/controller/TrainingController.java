@@ -47,7 +47,8 @@ public class TrainingController {
     @Secured("ROLE_USER")
     @PostMapping("/{username}")
     public ResponseEntity<Void> addTraining(@PathVariable String username,
-                                            @RequestBody RequestTraining requestTraining) {
+                                            @RequestBody RequestTraining requestTraining,
+                                            @RequestHeader("Authorization") String token) {
         Trainee trainee = traineeService.select(requestTraining.getTraineeUsername())
                 .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND, requestTraining.getTraineeUsername())));
         Trainer trainer = trainerService.select(requestTraining.getTrainerUsername())
@@ -58,16 +59,16 @@ public class TrainingController {
         training.setTrainingType(trainer.getSpecialization());
         trainingService.create(training);
         if (microserviceClientService.isServiceAvailable("microservice")) {
-            RequestParams requestParams = RequestParams.builder()
-                    .username(trainer.getUsername())
-                    .firstName(trainer.getFirstName())
-                    .lastName(trainer.getLastName())
-                    .isActive(trainer.getIsActive())
-                    .date(training.getTrainingDate())
-                    .duration(training.getDuration())
-                    .type(ActionType.ADD)
+            SubmitWorkloadChangesRequestBody requestBody = SubmitWorkloadChangesRequestBody.builder()
+                    .trainerUsername(trainer.getUsername())
+                    .trainerFirstName(trainer.getFirstName())
+                    .trainerLastName(trainer.getLastName())
+                    .trainerIsActive(trainer.getIsActive())
+                    .trainingDate(training.getTrainingDate())
+                    .trainingDurationMinutes(training.getDuration())
+                    .changeType(ActionType.ADD)
                     .build();
-            microserviceClientService.submitWorkloadChanges(requestParams);
+            microserviceClientService.submitWorkloadChanges(requestBody, token);
         }
         return ResponseEntity.noContent().build();
     }

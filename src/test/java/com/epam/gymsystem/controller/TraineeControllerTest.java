@@ -214,12 +214,14 @@ class TraineeControllerTest {
                 .duration(60)
                 .build();
         when(trainingService.selectTrainings(anyString(), any())).thenReturn(List.of(training));
-        when(microserviceClientService.submitWorkloadChanges(any())).thenReturn(ResponseEntity.noContent().build());
-        mockMvc.perform(delete("/api/v1/trainees/Test.User"))
+        when(microserviceClientService.submitWorkloadChanges(any(), anyString())).thenReturn(ResponseEntity.noContent().build());
+        mockMvc.perform(delete("/api/v1/trainees/Test.User")
+                        .header("Authorization", "Token"))
                 .andExpect(status().isNoContent());
         doNothing().when(traineeService).delete("Test.User");
         when(microserviceClientService.isServiceAvailable(anyString())).thenReturn(false);
-        mockMvc.perform(delete("/api/v1/trainees/Test.User"))
+        mockMvc.perform(delete("/api/v1/trainees/Test.User")
+                        .header("Authorization", "Token"))
                 .andExpect(status().isNoContent());
     }
 

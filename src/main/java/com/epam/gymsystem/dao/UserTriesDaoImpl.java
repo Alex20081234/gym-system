@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
-import java.util.Optional;
 
 @Dao
 @RequiredArgsConstructor
@@ -45,13 +44,11 @@ public class UserTriesDaoImpl implements UserTriesDao {
     @Override
     @Transactional(readOnly = true)
     public boolean isBlocked(String username) {
-        long blockTime;
         try {
-             blockTime = Optional.ofNullable(entityManager.createQuery(
-                            "select u.blockTime from UserTries u where u.id = :id", Long.class)
+            long blockTime = entityManager.createQuery("select coalesce(u.blockTime, 0) from UserTries u where id = :id", Long.class)
                     .setParameter("id", username)
-                    .getSingleResult()).orElse(0L);
-             return blockTime != 0 && (System.currentTimeMillis() - blockTime) < lockTime;
+                    .getSingleResult();
+            return blockTime != 0 && (System.currentTimeMillis() - blockTime) < lockTime;
         } catch (NoResultException e) {
             return false;
         }

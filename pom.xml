@@ -190,6 +190,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>com/epam/gymsystem/GymSystemApplication*</exclude>
+                                <exclude>com/epam/gymsystem/configuration/*</exclude>
                             </excludes>
                         </configuration>
                     </execution>
