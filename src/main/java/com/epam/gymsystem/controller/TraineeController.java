@@ -3,10 +3,13 @@ package com.epam.gymsystem.controller;
 import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
+import com.epam.gymsystem.domain.Training;
 import com.epam.gymsystem.dto.*;
 import com.epam.gymsystem.service.AuthService;
 import com.epam.gymsystem.common.MappingUtils;
+import com.epam.gymsystem.service.MicroserviceClientService;
 import com.epam.gymsystem.service.TraineeService;
+import com.epam.gymsystem.service.TrainingService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -29,7 +32,9 @@ import java.util.Map;
 public class TraineeController {
     private static final String NOT_FOUND = "Trainee with username %s was not found";
     private final TraineeService traineeService;
+    private final TrainingService trainingService;
     private final AuthService authService;
+    private final MicroserviceClientService microserviceClientService;
 
     @Operation(summary = "Register a new trainee")
     @ApiResponses(value = {
@@ -140,7 +145,23 @@ public class TraineeController {
     })
     @Secured("ROLE_USER")
     @DeleteMapping("/{username}")
-    public ResponseEntity<Void> deleteTrainee(@PathVariable String username) {
+    public ResponseEntity<Void> deleteTrainee(@PathVariable String username,
+                                              @RequestHeader("Authorization") String token) {
+        if (microserviceClientService.isServiceAvailable("microservice")) {
+            List<Training> trainings = trainingService.selectTrainings(username, null);
+            trainings.forEach(t -> {
+                SubmitWorkloadChangesRequestBody requestBody = SubmitWorkloadChangesRequestBody.builder()
+                        .trainerUsername(t.getTrainer().getUsername())
+                        .trainerFirstName(t.getTrainer().getFirstName())
+                        .trainerLastName(t.getTrainer().getLastName())
+                        .trainerIsActive(t.getTrainer().getIsActive())
+                        .trainingDate(t.getTrainingDate())
+                        .trainingDurationMinutes(t.getDuration())
+                        .changeType(ActionType.DELETE)
+                        .build();
+                microserviceClientService.submitWorkloadChanges(requestBody, token);
+            });
+        }
         traineeService.delete(username);
         return ResponseEntity.noContent().build();
     }

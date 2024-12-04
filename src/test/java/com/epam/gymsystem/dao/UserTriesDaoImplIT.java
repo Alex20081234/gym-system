@@ -3,6 +3,7 @@ package com.epam.gymsystem.dao;
 import com.epam.gymsystem.domain.UserTries;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,9 +21,16 @@ class UserTriesDaoImplIT {
     private EntityManager entityManager;
     @Autowired
     private UserTriesDaoImpl dao;
+    private boolean skip = false;
+
+    @BeforeEach
+    void setUp() {
+        skip = false;
+    }
 
     @AfterEach
     void cleanUp() {
+        if (skip) return;
         UserTries tries = entityManager.find(UserTries.class, USERNAME);
         entityManager.remove(tries);
         ReflectionTestUtils.setField(dao, "lockTime", 300000);
@@ -62,6 +70,12 @@ class UserTriesDaoImplIT {
         assertFalse(dao.isBlocked(USERNAME));
         dao.block(USERNAME);
         assertFalse(dao.isBlocked(USERNAME));
+    }
+
+    @Test
+    void isBlockedShouldReturnFalseWhenNoBlock() {
+        skip = true;
+        assertFalse(dao.isBlocked("Non.Existent"));
     }
 
     @Test

@@ -2,10 +2,13 @@ package com.epam.gymsystem.controller;
 
 import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
+import com.epam.gymsystem.domain.Training;
 import com.epam.gymsystem.domain.TrainingType;
 import com.epam.gymsystem.dto.*;
 import com.epam.gymsystem.service.AuthService;
+import com.epam.gymsystem.service.MicroserviceClientService;
 import com.epam.gymsystem.service.TraineeService;
+import com.epam.gymsystem.service.TrainingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.LocalDate;
@@ -33,6 +37,12 @@ class TraineeControllerTest {
 
     @Mock
     private TraineeService traineeService;
+
+    @Mock
+    private MicroserviceClientService microserviceClientService;
+
+    @Mock
+    private TrainingService trainingService;
 
     @Mock
     private AuthService authService;
@@ -171,7 +181,47 @@ class TraineeControllerTest {
     @Test
     void deleteTraineeShouldTryToDeleteTrainee() throws Exception {
         doNothing().when(traineeService).delete("Test.User");
-        mockMvc.perform(delete("/api/v1/trainees/Test.User"))
+        when(microserviceClientService.isServiceAvailable(anyString())).thenReturn(true);
+        Trainee trainee = Trainee.builder()
+                .firstName("Test")
+                .lastName("Trainee")
+                .username("Test.Trainee")
+                .password("password")
+                .isActive(true)
+                .dateOfBirth(LocalDate.of(1989, 10, 12))
+                .address("New Lane Avenue")
+                .build();
+        Trainer trainer = Trainer.builder()
+                .firstName("Test")
+                .lastName("Trainer")
+                .username("Test.Trainer")
+                .password("password")
+                .isActive(true)
+                .specialization(TrainingType.builder()
+                        .id(100)
+                        .name("Boxing")
+                        .build())
+                .build();
+        Training training = Training.builder()
+                .trainee(trainee)
+                .trainer(trainer)
+                .trainingName("Boxing practise")
+                .trainingType(TrainingType.builder()
+                        .name("Boxing")
+                        .id(100)
+                        .build())
+                .trainingDate(LocalDate.of(2024, 10, 17))
+                .duration(60)
+                .build();
+        when(trainingService.selectTrainings(anyString(), any())).thenReturn(List.of(training));
+        when(microserviceClientService.submitWorkloadChanges(any(), anyString())).thenReturn(ResponseEntity.noContent().build());
+        mockMvc.perform(delete("/api/v1/trainees/Test.User")
+                        .header("Authorization", "Token"))
+                .andExpect(status().isNoContent());
+        doNothing().when(traineeService).delete("Test.User");
+        when(microserviceClientService.isServiceAvailable(anyString())).thenReturn(false);
+        mockMvc.perform(delete("/api/v1/trainees/Test.User")
+                        .header("Authorization", "Token"))
                 .andExpect(status().isNoContent());
     }
 

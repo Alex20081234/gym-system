@@ -3,10 +3,10 @@ package com.epam.gymsystem.dao;
 import com.epam.gymsystem.common.Dao;
 import com.epam.gymsystem.domain.UserTries;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 
 @Dao
@@ -44,10 +44,14 @@ public class UserTriesDaoImpl implements UserTriesDao {
     @Override
     @Transactional(readOnly = true)
     public boolean isBlocked(String username) {
-        long blockTime = entityManager.createQuery("select coalesce(u.blockTime, 0) from UserTries u where id = :id", Long.class)
-                .setParameter("id", username)
-                .getSingleResult();
-        return blockTime != 0 && (System.currentTimeMillis() - blockTime) < lockTime;
+        try {
+            long blockTime = entityManager.createQuery("select coalesce(u.blockTime, 0) from UserTries u where id = :id", Long.class)
+                    .setParameter("id", username)
+                    .getSingleResult();
+            return blockTime != 0 && (System.currentTimeMillis() - blockTime) < lockTime;
+        } catch (NoResultException e) {
+            return false;
+        }
     }
 
     @Override

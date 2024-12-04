@@ -1,6 +1,5 @@
 package com.epam.gymsystem.controller;
 
-import com.epam.gymsystem.common.AccessDeniedRuntimeException;
 import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.dto.Passwords;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,14 +60,6 @@ class GlobalExceptionHandlerTest {
                         .content(json))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Invalid password"));
-    }
-
-    @Test
-    void handleAccessDeniedRuntimeExceptionShouldProcessAccessDeniedRuntimeException() throws Exception {
-        when(traineeController.getTrainee(anyString())).thenThrow(new AccessDeniedRuntimeException("Access denied"));
-        mockMvc.perform(get("/api/v1/trainees/Test.User"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(content().string("Access denied"));
     }
 
     @Test

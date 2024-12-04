@@ -10,12 +10,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -34,6 +36,9 @@ class TrainingControllerTest {
 
     @Mock
     private TrainingService trainingService;
+
+    @Mock
+    private MicroserviceClientService microserviceClientService;
 
     @InjectMocks
     private TrainingController trainingController;
@@ -78,9 +83,21 @@ class TrainingControllerTest {
         when(trainerService.select("Test.Trainer")).thenReturn(Optional.of(trainer));
         when(traineeService.select("Test.Trainee")).thenReturn(Optional.of(trainee));
         doNothing().when(trainingService).create(any());
+        when(microserviceClientService.isServiceAvailable(anyString())).thenReturn(true);
+        when(microserviceClientService.submitWorkloadChanges(any(), anyString())).thenReturn(ResponseEntity.noContent().build());
         mockMvc.perform(post("/api/v1/trainings/Test.Trainee")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(mapper.writeValueAsString(training)))
+                    .content(mapper.writeValueAsString(training))
+                        .header("Authorization", "Token"))
+                .andExpect(status().isNoContent());
+        when(trainerService.select("Test.Trainer")).thenReturn(Optional.of(trainer));
+        when(traineeService.select("Test.Trainee")).thenReturn(Optional.of(trainee));
+        doNothing().when(trainingService).create(any());
+        when(microserviceClientService.isServiceAvailable(anyString())).thenReturn(false);
+        mockMvc.perform(post("/api/v1/trainings/Test.Trainee")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(training))
+                        .header("Authorization", "Token"))
                 .andExpect(status().isNoContent());
     }
 
@@ -95,7 +112,8 @@ class TrainingControllerTest {
                 .build();
         mockMvc.perform(post("/api/v1/trainings/Non.Existent")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(mapper.writeValueAsString(requestTraining)))
+                    .content(mapper.writeValueAsString(requestTraining))
+                        .header("Authorization", "Token"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User with username Non.Existent was not found"));
         requestTraining.setTraineeUsername("Test.User");
@@ -103,7 +121,8 @@ class TrainingControllerTest {
         when(traineeService.select("Test.User")).thenReturn(Optional.of(new Trainee()));
         mockMvc.perform(post("/api/v1/trainings/Test.User")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(requestTraining)))
+                        .content(mapper.writeValueAsString(requestTraining))
+                        .header("Authorization", "Token"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User with username Non.Existent was not found"));
     }

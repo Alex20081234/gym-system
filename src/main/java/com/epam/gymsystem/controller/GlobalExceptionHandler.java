@@ -1,6 +1,5 @@
 package com.epam.gymsystem.controller;
 
-import com.epam.gymsystem.common.AccessDeniedRuntimeException;
 import com.epam.gymsystem.common.UserNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,14 +22,9 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(AccessDeniedRuntimeException.class)
-    public ResponseEntity<String> handleAccessDeniedRuntimeException(AccessDeniedRuntimeException e, WebRequest request) {
-        return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
-    }
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e, WebRequest request) {
-        log.error(e.getMessage());
+        log.error("Unexpected error occurred", e);
         return new ResponseEntity<>("Unexpected error occurred : " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
