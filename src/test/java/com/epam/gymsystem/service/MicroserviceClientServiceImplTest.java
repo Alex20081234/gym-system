@@ -2,96 +2,34 @@ package com.epam.gymsystem.service;
 
 import com.epam.gymsystem.dto.ActionType;
 import com.epam.gymsystem.dto.SubmitWorkloadChangesRequestBody;
-import com.netflix.appinfo.InstanceInfo;
-import com.netflix.discovery.EurekaClient;
-import com.netflix.discovery.shared.Application;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
+import org.springframework.jms.core.JmsTemplate;
 import static org.mockito.Mockito.*;
 
 class MicroserviceClientServiceImplTest {
-    @Mock
-    private RestTemplate restTemplate;
-    @Mock
-    private EurekaClient eurekaClient;
-    @InjectMocks
-    private MicroserviceClientServiceImpl service;
+    private final String queueName = "test-queue";
+    private JmsTemplate jmsTemplate;
+    private MessageSenderServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        jmsTemplate = mock(JmsTemplate.class);
+        service = new MessageSenderServiceImpl(jmsTemplate, queueName);
     }
 
     @Test
-    void submitChangesShouldTryToSubmitChanges() {
-        SubmitWorkloadChangesRequestBody params = SubmitWorkloadChangesRequestBody.builder()
+    void sendMessageShouldTryToSendMessageToQueue() {
+        SubmitWorkloadChangesRequestBody body = SubmitWorkloadChangesRequestBody.builder()
                 .trainerUsername("John.Doe")
                 .trainerFirstName("John")
                 .trainerLastName("Doe")
                 .trainerIsActive(true)
                 .changeType(ActionType.ADD)
-                .trainingDate(LocalDate.of(2024, 10, 12))
+                .trainingDate("2024-10-12")
                 .trainingDurationMinutes(10)
                 .build();
-        InstanceInfo info = mock(InstanceInfo.class);
-        when(eurekaClient.getNextServerFromEureka(anyString(), anyBoolean())).thenReturn(info);
-        when(info.getHomePageUrl()).thenReturn("/home-page/");
-        when(restTemplate.exchange(anyString(), any(), any(), (Class<Object>) any()))
-                .thenReturn(ResponseEntity.noContent().build());
-        service.submitWorkloadChanges(params, "Token");
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("trainerUsername", params.getTrainerUsername());
-        requestBody.put("trainerFirstName", params.getTrainerFirstName());
-        requestBody.put("trainerLastName", params.getTrainerLastName());
-        requestBody.put("trainerIsActive", params.getTrainerIsActive());
-        requestBody.put("trainingDate", params.getTrainingDate());
-        requestBody.put("trainingDurationMinutes", params.getTrainingDurationMinutes());
-        requestBody.put("changeType", params.getChangeType());
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set("Authorization", "Token");
-        HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(requestBody, httpHeaders);
-        verify(restTemplate, times(1)).exchange("/home-page/api/v1/workload/submit",
-                HttpMethod.PATCH,
-                httpEntity,
-                Void.class);
-    }
-
-    @Test
-    void isServiceAvailableShouldReturnTrueWhenServiceAvailable() {
-        Application app = mock(Application.class);
-        when(eurekaClient.getApplication(anyString())).thenReturn(app);
-        List<InstanceInfo> list = mock(List.class);
-        when(app.getInstances()).thenReturn(list);
-        when(list.isEmpty()).thenReturn(false);
-        assertTrue(service.isServiceAvailable("microservice"));
-    }
-
-    @Test
-    void isServiceAvailableShouldReturnFalseWhenServerIsUnavailable() {
-        when(eurekaClient.getApplication(anyString())).thenReturn(null);
-        assertFalse(service.isServiceAvailable("microservice"));
-        Application app = mock(Application.class);
-        when(eurekaClient.getApplication(anyString())).thenReturn(app);
-        List<InstanceInfo> list = mock(List.class);
-        when(app.getInstances()).thenReturn(list);
-        when(list.isEmpty()).thenReturn(true);
-        assertFalse(service.isServiceAvailable("microservice"));
-        when(eurekaClient.getApplication(anyString())).thenThrow(new RuntimeException());
-        assertFalse(service.isServiceAvailable("microservice"));
+        service.sendMessage(body);
+        verify(jmsTemplate, times(1)).convertAndSend(queueName, body);
     }
 }

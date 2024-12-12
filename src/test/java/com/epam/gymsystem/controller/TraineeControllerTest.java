@@ -6,7 +6,7 @@ import com.epam.gymsystem.domain.Training;
 import com.epam.gymsystem.domain.TrainingType;
 import com.epam.gymsystem.dto.*;
 import com.epam.gymsystem.service.AuthService;
-import com.epam.gymsystem.service.MicroserviceClientService;
+import com.epam.gymsystem.service.MessageSenderService;
 import com.epam.gymsystem.service.TraineeService;
 import com.epam.gymsystem.service.TrainingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +16,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.LocalDate;
@@ -39,7 +38,7 @@ class TraineeControllerTest {
     private TraineeService traineeService;
 
     @Mock
-    private MicroserviceClientService microserviceClientService;
+    private MessageSenderService messageSenderService;
 
     @Mock
     private TrainingService trainingService;
@@ -180,8 +179,6 @@ class TraineeControllerTest {
 
     @Test
     void deleteTraineeShouldTryToDeleteTrainee() throws Exception {
-        doNothing().when(traineeService).delete("Test.User");
-        when(microserviceClientService.isServiceAvailable(anyString())).thenReturn(true);
         Trainee trainee = Trainee.builder()
                 .firstName("Test")
                 .lastName("Trainee")
@@ -214,14 +211,9 @@ class TraineeControllerTest {
                 .duration(60)
                 .build();
         when(trainingService.selectTrainings(anyString(), any())).thenReturn(List.of(training));
-        when(microserviceClientService.submitWorkloadChanges(any(), anyString())).thenReturn(ResponseEntity.noContent().build());
-        mockMvc.perform(delete("/api/v1/trainees/Test.User")
-                        .header("Authorization", "Token"))
-                .andExpect(status().isNoContent());
+        doNothing().when(messageSenderService).sendMessage(any());
         doNothing().when(traineeService).delete("Test.User");
-        when(microserviceClientService.isServiceAvailable(anyString())).thenReturn(false);
-        mockMvc.perform(delete("/api/v1/trainees/Test.User")
-                        .header("Authorization", "Token"))
+        mockMvc.perform(delete("/api/v1/trainees/Test.User"))
                 .andExpect(status().isNoContent());
     }
 

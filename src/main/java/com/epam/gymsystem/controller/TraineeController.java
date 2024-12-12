@@ -7,7 +7,7 @@ import com.epam.gymsystem.domain.Training;
 import com.epam.gymsystem.dto.*;
 import com.epam.gymsystem.service.AuthService;
 import com.epam.gymsystem.common.MappingUtils;
-import com.epam.gymsystem.service.MicroserviceClientService;
+import com.epam.gymsystem.service.MessageSenderService;
 import com.epam.gymsystem.service.TraineeService;
 import com.epam.gymsystem.service.TrainingService;
 import lombok.AllArgsConstructor;
@@ -34,7 +34,7 @@ public class TraineeController {
     private final TraineeService traineeService;
     private final TrainingService trainingService;
     private final AuthService authService;
-    private final MicroserviceClientService microserviceClientService;
+    private final MessageSenderService messageSenderService;
 
     @Operation(summary = "Register a new trainee")
     @ApiResponses(value = {
@@ -145,23 +145,20 @@ public class TraineeController {
     })
     @Secured("ROLE_USER")
     @DeleteMapping("/{username}")
-    public ResponseEntity<Void> deleteTrainee(@PathVariable String username,
-                                              @RequestHeader("Authorization") String token) {
-        if (microserviceClientService.isServiceAvailable("microservice")) {
-            List<Training> trainings = trainingService.selectTrainings(username, null);
-            trainings.forEach(t -> {
-                SubmitWorkloadChangesRequestBody requestBody = SubmitWorkloadChangesRequestBody.builder()
-                        .trainerUsername(t.getTrainer().getUsername())
-                        .trainerFirstName(t.getTrainer().getFirstName())
-                        .trainerLastName(t.getTrainer().getLastName())
-                        .trainerIsActive(t.getTrainer().getIsActive())
-                        .trainingDate(t.getTrainingDate())
-                        .trainingDurationMinutes(t.getDuration())
-                        .changeType(ActionType.DELETE)
-                        .build();
-                microserviceClientService.submitWorkloadChanges(requestBody, token);
-            });
-        }
+    public ResponseEntity<Void> deleteTrainee(@PathVariable String username) {
+        List<Training> trainings = trainingService.selectTrainings(username, null);
+        trainings.forEach(t -> {
+            SubmitWorkloadChangesRequestBody requestBody = SubmitWorkloadChangesRequestBody.builder()
+                    .trainerUsername(t.getTrainer().getUsername())
+                    .trainerFirstName(t.getTrainer().getFirstName())
+                    .trainerLastName(t.getTrainer().getLastName())
+                    .trainerIsActive(t.getTrainer().getIsActive())
+                    .trainingDate(t.getTrainingDate().toString())
+                    .trainingDurationMinutes(t.getDuration())
+                    .changeType(ActionType.DELETE)
+                    .build();
+            messageSenderService.sendMessage(requestBody);
+        });
         traineeService.delete(username);
         return ResponseEntity.noContent().build();
     }

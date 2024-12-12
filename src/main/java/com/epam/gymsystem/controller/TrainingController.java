@@ -4,7 +4,7 @@ import com.epam.gymsystem.common.MappingUtils;
 import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.domain.*;
 import com.epam.gymsystem.dto.*;
-import com.epam.gymsystem.service.MicroserviceClientService;
+import com.epam.gymsystem.service.MessageSenderService;
 import com.epam.gymsystem.service.TrainingService;
 import com.epam.gymsystem.service.TraineeService;
 import com.epam.gymsystem.service.TrainerService;
@@ -29,7 +29,7 @@ public class TrainingController {
     private final TrainingService trainingService;
     private final TrainerService trainerService;
     private final TraineeService traineeService;
-    private final MicroserviceClientService microserviceClientService;
+    private final MessageSenderService messageSenderService;
 
     @Operation(summary = "Add a new training")
     @ApiResponses(value = {
@@ -47,8 +47,7 @@ public class TrainingController {
     @Secured("ROLE_USER")
     @PostMapping("/{username}")
     public ResponseEntity<Void> addTraining(@PathVariable String username,
-                                            @RequestBody RequestTraining requestTraining,
-                                            @RequestHeader("Authorization") String token) {
+                                            @RequestBody RequestTraining requestTraining) {
         Trainee trainee = traineeService.select(requestTraining.getTraineeUsername())
                 .orElseThrow(() -> new UserNotFoundException(String.format(USER_NOT_FOUND, requestTraining.getTraineeUsername())));
         Trainer trainer = trainerService.select(requestTraining.getTrainerUsername())
@@ -58,18 +57,16 @@ public class TrainingController {
         training.setTrainee(trainee);
         training.setTrainingType(trainer.getSpecialization());
         trainingService.create(training);
-        if (microserviceClientService.isServiceAvailable("microservice")) {
-            SubmitWorkloadChangesRequestBody requestBody = SubmitWorkloadChangesRequestBody.builder()
-                    .trainerUsername(trainer.getUsername())
-                    .trainerFirstName(trainer.getFirstName())
-                    .trainerLastName(trainer.getLastName())
-                    .trainerIsActive(trainer.getIsActive())
-                    .trainingDate(training.getTrainingDate())
-                    .trainingDurationMinutes(training.getDuration())
-                    .changeType(ActionType.ADD)
-                    .build();
-            microserviceClientService.submitWorkloadChanges(requestBody, token);
-        }
+        SubmitWorkloadChangesRequestBody requestBody = SubmitWorkloadChangesRequestBody.builder()
+                .trainerUsername(trainer.getUsername())
+                .trainerFirstName(trainer.getFirstName())
+                .trainerLastName(trainer.getLastName())
+                .trainerIsActive(trainer.getIsActive())
+                .trainingDate(training.getTrainingDate().toString())
+                .trainingDurationMinutes(training.getDuration())
+                .changeType(ActionType.ADD)
+                .build();
+        messageSenderService.sendMessage(requestBody);
         return ResponseEntity.noContent().build();
     }
 
