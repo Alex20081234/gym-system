@@ -153,7 +153,7 @@ public class TraineeController {
                     .trainerFirstName(t.getTrainer().getFirstName())
                     .trainerLastName(t.getTrainer().getLastName())
                     .trainerIsActive(t.getTrainer().getIsActive())
-                    .trainingDate(t.getTrainingDate().toString())
+                    .trainingDate(t.getTrainingDate())
                     .trainingDurationMinutes(t.getDuration())
                     .changeType(ActionType.DELETE)
                     .build();

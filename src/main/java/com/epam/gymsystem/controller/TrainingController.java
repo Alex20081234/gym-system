@@ -62,7 +62,7 @@ public class TrainingController {
                 .trainerFirstName(trainer.getFirstName())
                 .trainerLastName(trainer.getLastName())
                 .trainerIsActive(trainer.getIsActive())
-                .trainingDate(training.getTrainingDate().toString())
+                .trainingDate(training.getTrainingDate())
                 .trainingDurationMinutes(training.getDuration())
                 .changeType(ActionType.ADD)
                 .build();

@@ -5,6 +5,7 @@ import com.epam.gymsystem.dto.SubmitWorkloadChangesRequestBody;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jms.core.JmsTemplate;
+import java.time.LocalDate;
 import static org.mockito.Mockito.*;
 
 class MicroserviceClientServiceImplTest {
@@ -26,7 +27,7 @@ class MicroserviceClientServiceImplTest {
                 .trainerLastName("Doe")
                 .trainerIsActive(true)
                 .changeType(ActionType.ADD)
-                .trainingDate("2024-10-12")
+                .trainingDate(LocalDate.of(2024, 10, 12))
                 .trainingDurationMinutes(10)
                 .build();
         service.sendMessage(body);
