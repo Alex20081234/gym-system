@@ -6,9 +6,10 @@ import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.CollectionUtils;
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class TraineeServiceImplTest {
     @Mock
     private TraineeDao dao;
@@ -27,7 +29,6 @@ class TraineeServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
         trainee = Trainee.builder()
                 .firstName("Test")
                 .lastName("Trainee")
@@ -60,7 +61,6 @@ class TraineeServiceImplTest {
     @Test
     void changePasswordShouldTryToMakeChangeToDatabase() {
         doNothing().when(dao).changePassword(any(), anyString());
-        doReturn(Optional.of(trainee)).when(dao).select(anyString());
         when(encoder.encode(anyString())).thenReturn("newpassword");
         service.changePassword("Test.Trainee", "newpassword");
         verify(dao, times(1)).changePassword("Test.Trainee", "newpassword");

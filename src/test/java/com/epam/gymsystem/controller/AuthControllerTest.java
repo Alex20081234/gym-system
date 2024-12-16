@@ -5,9 +5,10 @@ import com.epam.gymsystem.security.JwtService;
 import com.epam.gymsystem.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +21,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
     private MockMvc mockMvc;
     @Mock
@@ -37,7 +39,6 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(authController, "maxFailedAttempts", 3);
         mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
     }
@@ -61,16 +62,19 @@ class AuthControllerTest {
     void loginShouldReturnUnauthorizedWhenIncorrectCredentials() throws Exception {
         String expected = "Invalid username or password";
         for (int i = 1; i < 5; i++) {
-            when(dao.isBlocked(anyString())).thenReturn(false);
             if (i == 4) {
                 expected = "You have been blocked for 5 minutes";
                 when(dao.isBlocked(anyString())).thenReturn(true);
+            } else {
+                when(dao.isBlocked(anyString())).thenReturn(false);
+                when(authService.selectPassword("validUser")).thenReturn("invalidPassword");
+                when(encoder.matches(any(), anyString())).thenReturn(false);
+                doNothing().when(dao).incrementAttemptsOrCreateEntry(anyString());
+                when(dao.attempts(anyString())).thenReturn(i);
+                if (i == 3) {
+                    doNothing().when(dao).block(anyString());
+                }
             }
-            when(authService.selectPassword("validUser")).thenReturn("invalidPassword");
-            when(encoder.matches(any(), anyString())).thenReturn(false);
-            doNothing().when(dao).incrementAttemptsOrCreateEntry(anyString());
-            when(dao.attempts(anyString())).thenReturn(i);
-            doNothing().when(dao).block(anyString());
             mockMvc.perform(get("/api/v1/login")
                             .param("username", "validUser")
                             .param("password", "validPassword"))
