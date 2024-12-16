@@ -4,17 +4,18 @@ import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class GymSystemUserDetailsServiceTest {
     @Mock
     private EntityManager entityManager;
@@ -22,11 +23,6 @@ class GymSystemUserDetailsServiceTest {
     private TypedQuery<User> query;
     @InjectMocks
     private GymSystemUserDetailsService userDetailsService;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
 
     @Test
     void loadUserByUsernameShouldReturnUserDetailsWhenUserExists() {

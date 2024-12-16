@@ -3,8 +3,9 @@ package com.epam.gymsystem.security;
 import com.epam.gymsystem.dao.BlacklistDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,6 +15,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class JwtServiceTest {
     @Mock
     private BlacklistDao dao;
@@ -24,7 +26,6 @@ class JwtServiceTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
         jwtService = new JwtService(dao, "A2L8YVx0gfXUJpA5p3lBzX9K8klcmXUOvPjH4FbbJCI=", 600000);
         resetAuthentication();
         testToken = jwtService.generateJwtToken(authentication);

@@ -8,14 +8,14 @@ import org.springframework.jms.core.JmsTemplate;
 import static org.mockito.Mockito.*;
 
 class MicroserviceClientServiceImplTest {
-    private final String queueName = "test-queue";
+    private static final String QUEUE_NAME = "test-queue";
     private JmsTemplate jmsTemplate;
     private MessageSenderServiceImpl service;
 
     @BeforeEach
     void setUp() {
         jmsTemplate = mock(JmsTemplate.class);
-        service = new MessageSenderServiceImpl(jmsTemplate, queueName);
+        service = new MessageSenderServiceImpl(jmsTemplate, QUEUE_NAME);
     }
 
     @Test
@@ -30,6 +30,6 @@ class MicroserviceClientServiceImplTest {
                 .trainingDurationMinutes(10)
                 .build();
         service.sendMessage(body);
-        verify(jmsTemplate, times(1)).convertAndSend(queueName, body);
+        verify(jmsTemplate, times(1)).convertAndSend(QUEUE_NAME, body);
     }
 }
