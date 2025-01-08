@@ -27,7 +27,7 @@ public final class MappingUtils {
         return Trainee.builder()
                 .firstName(extendedRequestTrainee.getFirstName())
                 .lastName(extendedRequestTrainee.getLastName())
-                .dateOfBirth(LocalDate.parse(extendedRequestTrainee.getDateOfBirth()))
+                .dateOfBirth(extendedRequestTrainee.getDateOfBirth() != null ? LocalDate.parse(extendedRequestTrainee.getDateOfBirth()) : null)
                 .address(extendedRequestTrainee.getAddress())
                 .isActive(Boolean.parseBoolean(extendedRequestTrainee.getIsActive()))
                 .build();
@@ -154,6 +154,9 @@ public final class MappingUtils {
     }
 
     public static TrainingType fromShortTrainingTypeToTrainingType(ShortTrainingType requestTrainingType) {
+        if (requestTrainingType == null) {
+            return null;
+        }
         return TrainingType.builder()
                 .name(requestTrainingType.getName())
                 .id(requestTrainingType.getId())
