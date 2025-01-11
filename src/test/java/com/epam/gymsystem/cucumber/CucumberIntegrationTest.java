@@ -8,9 +8,9 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @IncludeEngines("cucumber")
-@SelectClasspathResource("com/epam/gymsystem/steps/component")
+@SelectClasspathResource("com/epam/gymsystem/steps/integration")
 @ConfigurationParameter(key = Constants.FEATURES_PROPERTY_NAME, value = "src/test/resources/features")
-@ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME, value = "com/epam/gymsystem/steps/component")
-@ConfigurationParameter(key = Constants.FILTER_TAGS_PROPERTY_NAME, value = "@component")
-@ConfigurationParameter(key = Constants.PLUGIN_PROPERTY_NAME, value = "pretty, html:target/cucumber-report/cucumber-component.html")
-public class CucumberComponentTest {}
+@ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME, value = "com/epam/gymsystem/steps/integration")
+@ConfigurationParameter(key = Constants.FILTER_TAGS_PROPERTY_NAME, value = "@integration")
+@ConfigurationParameter(key = Constants.PLUGIN_PROPERTY_NAME, value = "pretty, html:target/cucumber-report/cucumber-integration.html")
+public class CucumberIntegrationTest {}

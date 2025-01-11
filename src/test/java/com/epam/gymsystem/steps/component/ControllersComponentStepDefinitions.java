@@ -1,8 +1,6 @@
-package com.epam.gymsystem.steps;
+package com.epam.gymsystem.steps.component;
 
-import com.epam.gymsystem.common.UserNotFoundException;
 import com.epam.gymsystem.cucumber.CucumberSpringConfiguration;
-import com.epam.gymsystem.dao.UserTriesDao;
 import com.epam.gymsystem.domain.Trainee;
 import com.epam.gymsystem.domain.Trainer;
 import com.epam.gymsystem.domain.Training;
@@ -15,63 +13,35 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.cucumber.spring.CucumberContextConfiguration;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @CucumberContextConfiguration
-@ExtendWith(MockitoExtension.class)
 public class ControllersComponentStepDefinitions extends CucumberSpringConfiguration {
-    @MockBean
-    private UserTriesDao dao;
-    @MockBean
-    private AuthService authService;
-    @MockBean
-    private AuthenticationManager authenticationManager;
-    @SpyBean
-    private JwtService jwtService;
-    @SpyBean
+    @Autowired
     private PasswordEncoder encoder;
-    @MockBean
-    private UserDetailsService userDetailsService;
-    @MockBean
-    private TraineeService traineeService;
-    @MockBean
-    private TrainerService trainerService;
-    @MockBean
-    private TrainingService trainingService;
+    @Autowired
+    private JwtService jwtService;
+    @Autowired
+    private EntityManagerFactory factory;
+    private EntityManager entityManager;
     @MockBean
     private MessageSenderService messageSenderService;
     private String jwt;
     private ResponseEntity<?> response;
-
-    @Given("valid credentials")
-    public void validCredentials() {
-        when(dao.isBlocked(anyString())).thenReturn(false);
-        when(authService.selectPassword(anyString())).thenReturn("password");
-        when(encoder.matches(anyString(), anyString())).thenReturn(true);
-        User.UserBuilder builder = User.withUsername("John.Doe");
-        builder.password("password");
-        builder.roles("USER");
-        when(authenticationManager.authenticate(any())).thenReturn(new UsernamePasswordAuthenticationToken(builder.build(), "password"));
-    }
 
     @Then("the response status should be {int}")
     public void theResponseStatusShouldBe(int statusCode) {
@@ -83,21 +53,17 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
         assertTrue(jwtService.validateJwtToken(response.getBody().toString()));
     }
 
-    @Given("a valid JWT")
-    public void aValidJWT() {
-        User.UserBuilder builder = User.withUsername("John.Doe");
+    @Given("a valid {string} JWT")
+    public void aValidJWT(String user) {
+        User.UserBuilder builder;
+        if (user.equals("trainee")) {
+            builder = User.withUsername("John.Doe");
+        } else {
+            builder = User.withUsername("Jane.Smith");
+        }
         builder.password("password");
         builder.roles("USER");
         jwt = jwtService.generateJwtToken(new UsernamePasswordAuthenticationToken(builder.build(), "password"));
-    }
-
-    @Given("invalid credentials")
-    public void invalidCredentials() {
-        when(dao.isBlocked(anyString())).thenReturn(false);
-        when(authService.selectPassword(anyString())).thenReturn("different");
-        when(encoder.matches(anyString(), anyString())).thenReturn(false);
-        doNothing().when(dao).incrementAttemptsOrCreateEntry(anyString());
-        when(dao.attempts(anyString())).thenReturn(1);
     }
 
     @And("the response body should contain {string}")
@@ -106,48 +72,29 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
     }
 
     @Given("nonexistent credentials")
-    public void nonexistentCredentials() {
-        doThrow(new UserNotFoundException("User with username Nonexistent was not found")).when(authService).selectPassword(anyString());
-    }
+    public void nonexistentCredentials() {}
 
     @Given("an invalid JWT")
     public void anInvalidJWT() {
         jwt = "invalid";
     }
 
-    @And("the service throws an unexpected error")
-    public void theServiceThrowsAnUnexpectedError() {
-        doThrow(new RuntimeException("Unexpected database error")).when(jwtService).blacklistToken(anyString());
-    }
-
     @When("I send a login GET request to {string}")
     public void iSendALoginGETRequestTo(String endpoint) {
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwt);
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
         response = testRestTemplate.exchange(endpoint, HttpMethod.GET, requestEntity, String.class);
     }
 
     @When("I send a logout GET request to {string} {string} exception")
     public void iSendALogoutGETRequestTo(String endpoint, String isExpException) {
-        if (!jwt.equals("invalid")) {
-            setUpUserDetails();
-        }
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwt);
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-        if (isExpException.contains("not")) {
-            response = testRestTemplate.exchange(endpoint, HttpMethod.GET, requestEntity, Void.class);
-        } else if (isExpException.contains("4xx")) {
-            await().atMost(1, TimeUnit.SECONDS).until(() -> {
-                response = testRestTemplate.exchange(endpoint, HttpMethod.GET, requestEntity, String.class);
-                return response.getStatusCode().is4xxClientError();
-            });
+        if (isExpException.contains("expecting")) {
+            response = testRestTemplate.exchange(endpoint, HttpMethod.GET, requestEntity, String.class);
         } else {
-            await().atMost(1, TimeUnit.SECONDS).until(() -> {
-                response = testRestTemplate.exchange(endpoint, HttpMethod.GET, requestEntity, String.class);
-                return response.getStatusCode().is5xxServerError();
-            });
+            response = testRestTemplate.exchange(endpoint, HttpMethod.GET, requestEntity, Void.class);
         }
     }
 
@@ -158,15 +105,8 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
         assertEquals(10, credentials.getPassword().length());
     }
 
-    @Given("an existing trainee login info")
-    public void anExistingLoginInfo() {
-        when(authService.selectPassword(anyString())).thenReturn("password");
-        doNothing().when(traineeService).changePassword(anyString(), anyString());
-    }
-
     @When("I send a PUT request to {string} with {string} in body expecting {string}")
     public void iSendAPUTRequestToWithOldPasswordPasswordNewPasswordNewPasswordInBody(String endpoint, String body, String responseType) {
-        setUpUserDetails();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwt);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -192,20 +132,23 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
     @Given("an existing trainee info")
     public void anExistingTraineeInfo() {
         Trainee trainee = Trainee.builder()
+                .password(encoder.encode("password"))
                 .username("John.Doe")
                 .firstName("John")
                 .lastName("Doe")
                 .dateOfBirth(LocalDate.of(1990, 1, 1))
                 .address("123 Main St")
                 .isActive(true)
-                .trainings(null)
                 .build();
-        when(traineeService.select(anyString())).thenReturn(Optional.of(trainee));
+        entityManager = factory.createEntityManager();
+        entityManager.getTransaction().begin();
+        entityManager.persist(trainee);
+        entityManager.getTransaction().commit();
+        entityManager.close();
     }
 
     @When("I send a GET request to {string} expecting {string}")
     public void iSendAGETRequestTo(String endpoint, String responseType) {
-        setUpUserDetails();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwt);
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -230,30 +173,8 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
         }
     }
 
-    @Given("an existing trainee update info")
-    public void anExistingTraineeUpdateInfo() {
-        when(traineeService.update(anyString(), any())).thenReturn("John.Doe");
-        Trainee trainee = Trainee.builder()
-                .username("John.Doe")
-                .firstName("John")
-                .lastName("Doe")
-                .dateOfBirth(LocalDate.of(1990, 1, 1))
-                .address("123 Side St")
-                .isActive(true)
-                .trainings(null)
-                .build();
-        when(traineeService.select(anyString())).thenReturn(Optional.of(trainee));
-    }
-
-    @Given("an existing trainee delete info")
-    public void anExistingTraineeDeleteInfo() {
-        when(trainingService.selectTrainings(anyString(), any())).thenReturn(new ArrayList<>());
-        doNothing().when(traineeService).delete(anyString());
-    }
-
     @When("I send a DELETE request to {string}")
     public void iSendADELETERequestTo(String endpoint) {
-        setUpUserDetails();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwt);
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -266,46 +187,47 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
                 .firstName("Jane")
                 .lastName("Smith")
                 .username("Jane.Smith")
+                .password(encoder.encode("password"))
                 .isActive(true)
                 .specialization(TrainingType.builder().name("Yoga").id(1).build())
                 .trainings(null)
                 .build();
-        when(traineeService.selectNotAssignedTrainers(anyString())).thenReturn(List.of(trainer));
+        entityManager = factory.createEntityManager();
+        entityManager.getTransaction().begin();
+        entityManager.persist(trainer);
+        entityManager.getTransaction().commit();
+        entityManager.close();
     }
 
     @Given("an existing trainee trainers info")
     public void anExistingTraineeTrainersInfo() {
-        doNothing().when(traineeService).updateTrainers(anyString(), any());
         Trainer trainer = Trainer.builder()
                 .firstName("Jane")
                 .lastName("Smith")
                 .username("Jane.Smith")
+                .password(encoder.encode("password"))
                 .isActive(true)
                 .specialization(TrainingType.builder().name("Yoga").id(1).build())
-                .trainings(null)
                 .build();
         Trainee trainee = Trainee.builder()
+                .password(encoder.encode("password"))
                 .username("John.Doe")
                 .firstName("John")
                 .lastName("Doe")
                 .dateOfBirth(LocalDate.of(1990, 1, 1))
                 .address("123 Main St")
                 .isActive(true)
-                .trainings(null)
-                .trainers(Set.of(trainer))
                 .build();
-        when(traineeService.select(anyString())).thenReturn(Optional.of(trainee));
-        doNothing().when(traineeService).loadDependencies(any());
-    }
-
-    @Given("an existing trainee change activity status info")
-    public void anExistingTraineeChangeActivityStatusInfo() {
-        doNothing().when(traineeService).changeActivityStatus(anyString(), anyBoolean());
+        entityManager = factory.createEntityManager();
+        entityManager.getTransaction().begin();
+        entityManager.persist(trainee);
+        entityManager.persist(trainer);
+        entityManager.getTransaction().commit();
+        entityManager.close();
     }
 
     @When("I send a PATCH request to {string} expecting {string}")
     public void iSendAPATCHRequestTo(String endpoint, String responseType) {
-        setUpUserDetails();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(jwt);
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -316,21 +238,12 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
         }
     }
 
-    @Given("a nonexistent trainee")
-    public void aNonexistentTrainee() {
-        doThrow(new UserNotFoundException("Trainee with username Nonexistent was not found")).when(traineeService).changeActivityStatus(anyString(), anyBoolean());
-    }
-
-    @And("change trainee's activity status method throws an unexpected error")
-    public void changeActivityStatusMethodThrowsAnUnexpectedError() {
-        doThrow(new RuntimeException("Unexpected database error")).when(traineeService).changeActivityStatus(anyString(), anyBoolean());
-    }
-
     @When("I send a POST request to {string} with {string} in body expecting {string}")
     public void iSendAPOSTRequestToWithFirstNameJohnLastNameDoeDateOfBirthAddressMainStInBody(String endpoint, String body, String responseType) {
-        setUpUserDetails();
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwt);
+        if (jwt != null) {
+            headers.setBearerAuth(jwt);
+        }
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> requestEntity = new HttpEntity<>(body, headers);
         switch(responseType) {
@@ -343,11 +256,6 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
             default:
                 response = testRestTemplate.exchange(endpoint, HttpMethod.POST, requestEntity, String.class);
         }
-    }
-
-    @And("available create trainee service")
-    public void availableCreateService() {
-        when(traineeService.create(any())).thenReturn(Credentials.builder().username("John.Doe").password("password12").build());
     }
 
     @And("the response body should contain ResponseTrainee with correct fields")
@@ -384,28 +292,21 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
         assertEquals(1, trainer.getSpecialization().getId());
     }
 
-    @And("available create trainer service")
-    public void availableCreateTrainerService() {
-        when(trainerService.create(any())).thenReturn(Credentials.builder().username("Jane.Smith").password("password12").build());
-    }
-
-    @Given("an existing trainer login info")
-    public void anExistingTrainerLoginInfo() {
-        when(authService.selectPassword(anyString())).thenReturn("password");
-        doNothing().when(trainerService).changePassword(anyString(), anyString());
-    }
-
     @Given("an existing trainer info")
     public void anExistingTrainerInfo() {
         Trainer trainer = Trainer.builder()
+                .password(encoder.encode("password"))
                 .firstName("Jane")
                 .lastName("Smith")
                 .username("Jane.Smith")
                 .isActive(true)
                 .specialization(TrainingType.builder().name("Yoga").id(1).build())
-                .trainings(null)
                 .build();
-        when(trainerService.select(anyString())).thenReturn(Optional.of(trainer));
+        entityManager = factory.createEntityManager();
+        entityManager.getTransaction().begin();
+        entityManager.persist(trainer);
+        entityManager.getTransaction().commit();
+        entityManager.close();
     }
 
     @And("the response body should contain ResponseTrainer with correct fields")
@@ -417,20 +318,6 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
         assertEquals(1, trainer.getSpecialization().getId());
         assertTrue(trainer.getIsActive());
         assertEquals(0, trainer.getTrainees().size());
-    }
-
-    @Given("an existing trainer update info")
-    public void anExistingTrainerUpdateInfo() {
-        when(trainerService.update(anyString(), any())).thenReturn("Alexa.Smith");
-        Trainer trainer = Trainer.builder()
-                .firstName("Alexa")
-                .lastName("Smith")
-                .username("Alexa.Smith")
-                .isActive(true)
-                .specialization(TrainingType.builder().name("Yoga").id(1).build())
-                .trainings(null)
-                .build();
-        when(trainerService.select(anyString())).thenReturn(Optional.of(trainer));
     }
 
     @And("the response body should contain ResponseTrainerWithUsername with correct fields")
@@ -445,21 +332,6 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
         assertEquals("Alexa.Smith", trainer.getUsername());
     }
 
-    @Given("an existing trainer change activity status info")
-    public void anExistingTrainerChangeActivityStatusInfo() {
-        doNothing().when(trainerService).changeActivityStatus(anyString(), anyBoolean());
-    }
-
-    @Given("a nonexistent trainer")
-    public void aNonexistentTrainer() {
-        doThrow(new UserNotFoundException("Trainer with username Nonexistent was not found")).when(trainerService).changeActivityStatus(anyString(), anyBoolean());
-    }
-
-    @And("change trainer's activity status method throws an unexpected error")
-    public void changeTrainerSActivityStatusMethodThrowsAnUnexpectedError() {
-        doThrow(new RuntimeException("Unexpected database error")).when(trainerService).changeActivityStatus(anyString(), anyBoolean());
-    }
-
     @Given("an existing training creation info")
     public void anExistingTrainingCreationInfo() {
         Trainee trainee = Trainee.builder()
@@ -468,35 +340,30 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
                 .lastName("Doe")
                 .dateOfBirth(LocalDate.of(1990, 1, 1))
                 .address("123 Main St")
+                .password(encoder.encode("password"))
                 .isActive(true)
-                .trainings(null)
                 .build();
-        when(traineeService.select(anyString())).thenReturn(Optional.of(trainee));
         Trainer trainer = Trainer.builder()
                 .firstName("Jane")
                 .lastName("Smith")
                 .username("Jane.Smith")
+                .password(encoder.encode("password"))
                 .isActive(true)
                 .specialization(TrainingType.builder().name("Yoga").id(1).build())
-                .trainings(null)
                 .build();
-        when(trainerService.select(anyString())).thenReturn(Optional.of(trainer));
-        doNothing().when(trainingService).create(any());
+        entityManager = factory.createEntityManager();
+        entityManager.getTransaction().begin();
+        entityManager.persist(trainee);
+        entityManager.persist(trainer);
+        entityManager.getTransaction().commit();
+        entityManager.close();
         doNothing().when(messageSenderService).sendMessage(any());
-    }
-
-    @Given("an existing training types info")
-    public void anExistingTrainingTypesInfo() {
-        TrainingType type = TrainingType.builder()
-                .id(1)
-                .name("Yoga")
-                .build();
-        when(trainingService.selectAllTypes()).thenReturn(List.of(type));
     }
 
     @And("the response body should contain List of ShortTrainingType with correct fields")
     public void theResponseBodyShouldContainListOfShortTrainingTypeWithCorrectFields() {
         List<ShortTrainingType> list = (List<ShortTrainingType>) response.getBody();
+        assertEquals(10, list.size());
         ShortTrainingType type = list.get(0);
         assertEquals(1, type.getId());
         assertEquals("Yoga", type.getName());
@@ -505,21 +372,21 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
     @Given("an existing training info")
     public void anExistingTrainingInfo() {
         Trainee trainee = Trainee.builder()
+                .password(encoder.encode("password"))
                 .username("John.Doe")
                 .firstName("John")
                 .lastName("Doe")
                 .dateOfBirth(LocalDate.of(1990, 1, 1))
                 .address("123 Main St")
                 .isActive(true)
-                .trainings(null)
                 .build();
         Trainer trainer = Trainer.builder()
+                .password(encoder.encode("password"))
                 .firstName("Jane")
                 .lastName("Smith")
                 .username("Jane.Smith")
                 .isActive(true)
                 .specialization(TrainingType.builder().name("Yoga").id(1).build())
-                .trainings(null)
                 .build();
         TrainingType type = TrainingType.builder()
                 .id(1)
@@ -533,7 +400,13 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
                 .trainingDate(LocalDate.of(2025, 1, 10))
                 .duration(60)
                 .build();
-        when(trainingService.selectTrainings(anyString(), any())).thenReturn(List.of(training));
+        entityManager = factory.createEntityManager();
+        entityManager.getTransaction().begin();
+        entityManager.persist(trainee);
+        entityManager.persist(trainer);
+        entityManager.persist(training);
+        entityManager.getTransaction().commit();
+        entityManager.close();
     }
 
     @And("the response body should contain List of ResponseTraining with correct fields")
@@ -546,22 +419,5 @@ public class ControllersComponentStepDefinitions extends CucumberSpringConfigura
         assertEquals(1, training.getType().getId());
         assertEquals(60, training.getDuration());
         assertEquals("Jane.Smith", training.getPartnerName());
-    }
-
-    @Given("a nonexistent user")
-    public void aNonexistentUser() {
-        doThrow(new UserNotFoundException("Trainee with username Nonexistent was not found")).when(traineeService).select(anyString());
-    }
-
-    @And("a training service's method select training types throws an unexpected error")
-    public void aTrainingServiceSMethodSelectTrainingTypesThrowsAnUnexpectedError() {
-        doThrow(new RuntimeException("Unexpected database error")).when(trainingService).selectAllTypes();
-    }
-
-    private void setUpUserDetails() {
-        User.UserBuilder builder = User.withUsername("John.Doe");
-        builder.password("password");
-        builder.roles("USER");
-        when(userDetailsService.loadUserByUsername(anyString())).thenReturn(builder.build());
     }
 }

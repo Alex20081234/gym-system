@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.*;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -21,6 +22,7 @@ import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
+@EnableAutoConfiguration
 @ComponentScan("com.epam.gymsystem")
 @PropertySource("classpath:application.properties")
 @PropertySource("classpath:application-${spring.profiles.active}.properties")
