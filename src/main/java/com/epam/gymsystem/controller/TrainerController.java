@@ -9,6 +9,7 @@ import com.epam.gymsystem.service.TrainerService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -24,6 +25,7 @@ import java.net.URI;
 public class TrainerController {
     private static final String NOT_FOUND = "Trainer with username %s was not found";
     private final TrainerService trainerService;
+    private final PasswordEncoder encoder;
     private final AuthService authService;
 
     @Operation(summary = "Register a new trainer")
@@ -64,7 +66,7 @@ public class TrainerController {
     public ResponseEntity<Void> changeLogin(@PathVariable String username,
                                             @RequestBody Passwords passwords) {
         String foundPassword = authService.selectPassword(username);
-        if (foundPassword.equals(passwords.getOldPassword())) {
+        if (encoder.matches(passwords.getOldPassword(), foundPassword)) {
             trainerService.changePassword(username, passwords.getNewPassword());
         } else {
             throw new IllegalArgumentException("Incorrect password");

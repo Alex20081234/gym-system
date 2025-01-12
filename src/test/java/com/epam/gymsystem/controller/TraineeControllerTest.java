@@ -17,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.LocalDate;
@@ -47,6 +48,9 @@ class TraineeControllerTest {
 
     @Mock
     private AuthService authService;
+
+    @Mock
+    private PasswordEncoder encoder;
 
     @InjectMocks
     private TraineeController traineeController;
@@ -85,6 +89,7 @@ class TraineeControllerTest {
                 .newPassword("newPassword")
                 .build();
         when(authService.selectPassword("Test.User")).thenReturn("oldPassword");
+        when(encoder.matches(anyString(), anyString())).thenReturn(true);
         mockMvc.perform(put("/api/v1/trainees/login/Test.User")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(passwords)))
@@ -98,6 +103,7 @@ class TraineeControllerTest {
                 .newPassword("newPassword")
                 .build();
         when(authService.selectPassword("Test.User")).thenReturn("oldPassword");
+        when(encoder.matches(anyString(), anyString())).thenReturn(false);
         mockMvc.perform(put("/api/v1/trainees/login/Test.User")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(passwords)))

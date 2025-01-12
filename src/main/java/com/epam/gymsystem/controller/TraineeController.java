@@ -13,6 +13,7 @@ import com.epam.gymsystem.service.TrainingService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -34,6 +35,7 @@ public class TraineeController {
     private final TraineeService traineeService;
     private final TrainingService trainingService;
     private final AuthService authService;
+    private final PasswordEncoder encoder;
     private final MessageSenderService messageSenderService;
 
     @Operation(summary = "Register a new trainee")
@@ -73,7 +75,7 @@ public class TraineeController {
     @PutMapping("/login/{username}")
     public ResponseEntity<Void> changeLogin(@PathVariable String username, @RequestBody Passwords passwords) {
         String foundPassword = authService.selectPassword(username);
-        if (foundPassword.equals(passwords.getOldPassword())) {
+        if (encoder.matches(passwords.getOldPassword(), foundPassword)) {
             traineeService.changePassword(username, passwords.getNewPassword());
         } else {
             throw new IllegalArgumentException("Incorrect password");
