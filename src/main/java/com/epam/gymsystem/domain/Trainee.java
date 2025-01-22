@@ -15,7 +15,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "Trainee")
+@Table(name = "trainee")
 public class Trainee extends User {
     @Column(name = "DateOfBirth")
     private LocalDate dateOfBirth;

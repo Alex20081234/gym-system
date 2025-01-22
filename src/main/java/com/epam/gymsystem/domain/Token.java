@@ -7,12 +7,11 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDate;
 
 @Builder
 @Entity
-@Table(name = "Blacklist")
+@Table(name = "blacklist")
 @AllArgsConstructor
 @NoArgsConstructor
 public class Token {

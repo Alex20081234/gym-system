@@ -1,0 +1,51 @@
+version: "3.9"
+services:
+  gymsystem:
+    image: gymsystem-app
+    container_name: gymsystem-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: gymsystem-db
+      MQ_HOST: activemq
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+    depends_on:
+      - gymsystem-db
+      - activemq
+
+  gymsystem-db:
+    image: mysql:8.0
+    container_name: gymsystem-db
+    build:
+      context: .
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: dev
+      MYSQL_PASSWORD: DevPassword
+    volumes:
+      - ./sql-scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - app-network
+
+  activemq:
+    image: rmohr/activemq
+    container_name: activemq
+    ports:
+      - "61616:61616"
+      - "8161:8161"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
