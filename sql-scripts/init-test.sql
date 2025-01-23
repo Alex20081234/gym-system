@@ -16,6 +16,8 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 CREATE DATABASE IF NOT EXISTS gymsystemtest;
+GRANT ALL PRIVILEGES ON gymsystemtest.* TO 'dev'@'%' IDENTIFIED BY 'DevPassword';
+FLUSH PRIVILEGES;
 USE gymsystemtest;
 
 --
