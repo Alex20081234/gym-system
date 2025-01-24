@@ -37,6 +37,25 @@ CREATE TABLE `blacklist` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `user`
+--
+
+DROP TABLE IF EXISTS `user`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user` (
+                        `IsActive` bit(1) NOT NULL,
+                        `id` int NOT NULL AUTO_INCREMENT,
+                        `FirstName` varchar(255) NOT NULL,
+                        `LastName` varchar(255) NOT NULL,
+                        `Password` varchar(255) NOT NULL,
+                        `Username` varchar(255) NOT NULL,
+                        PRIMARY KEY (`id`),
+                        UNIQUE KEY `UKseh7nteifndaopocsq9f1w8ia` (`Username`)
+) ENGINE=InnoDB AUTO_INCREMENT=867 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `trainee`
 --
 
@@ -49,6 +68,37 @@ CREATE TABLE `trainee` (
                            `Address` varchar(255) DEFAULT NULL,
                            PRIMARY KEY (`id`),
                            CONSTRAINT `FK1b1rs0qdwriiqxlqflj5njnho` FOREIGN KEY (`id`) REFERENCES `user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `trainingtype`
+--
+
+DROP TABLE IF EXISTS `trainingtype`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `trainingtype` (
+                                `id` int NOT NULL AUTO_INCREMENT,
+                                `TrainingTypeName` varchar(255) NOT NULL,
+                                PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `trainer`
+--
+
+DROP TABLE IF EXISTS `trainer`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `trainer` (
+                           `Specialization` int NOT NULL,
+                           `id` int NOT NULL,
+                           PRIMARY KEY (`id`),
+                           KEY `FKg1xt0c1nfosc7dpv4tehwwvie` (`Specialization`),
+                           CONSTRAINT `FKg1xt0c1nfosc7dpv4tehwwvie` FOREIGN KEY (`Specialization`) REFERENCES `trainingtype` (`id`),
+                           CONSTRAINT `FKm4ck87wwdx2p9ttytj6drmhng` FOREIGN KEY (`id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -66,23 +116,6 @@ CREATE TABLE `trainee_trainer` (
                                    KEY `FKe6n92jfm3hp9nuxk2u3ipshei` (`trainer_id`),
                                    CONSTRAINT `FK30hetj4tutcpj1q7qhgk96785` FOREIGN KEY (`trainee_id`) REFERENCES `trainee` (`id`),
                                    CONSTRAINT `FKe6n92jfm3hp9nuxk2u3ipshei` FOREIGN KEY (`trainer_id`) REFERENCES `trainer` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `trainer`
---
-
-DROP TABLE IF EXISTS `trainer`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `trainer` (
-                           `Specialization` int NOT NULL,
-                           `id` int NOT NULL,
-                           PRIMARY KEY (`id`),
-                           KEY `FKg1xt0c1nfosc7dpv4tehwwvie` (`Specialization`),
-                           CONSTRAINT `FKg1xt0c1nfosc7dpv4tehwwvie` FOREIGN KEY (`Specialization`) REFERENCES `trainingtype` (`id`),
-                           CONSTRAINT `FKm4ck87wwdx2p9ttytj6drmhng` FOREIGN KEY (`id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -109,39 +142,6 @@ CREATE TABLE `training` (
                             CONSTRAINT `FKlimd0kk0dah62b0206cadrib4` FOREIGN KEY (`TraineeId`) REFERENCES `trainee` (`id`),
                             CONSTRAINT `FKs9pox8k10cws4p6jdba9vsdtq` FOREIGN KEY (`TrainerId`) REFERENCES `trainer` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=268 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `trainingtype`
---
-
-DROP TABLE IF EXISTS `trainingtype`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `trainingtype` (
-                                `id` int NOT NULL AUTO_INCREMENT,
-                                `TrainingTypeName` varchar(255) NOT NULL,
-                                PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `user`
---
-
-DROP TABLE IF EXISTS `user`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `user` (
-                        `IsActive` bit(1) NOT NULL,
-                        `id` int NOT NULL AUTO_INCREMENT,
-                        `FirstName` varchar(255) NOT NULL,
-                        `LastName` varchar(255) NOT NULL,
-                        `Password` varchar(255) NOT NULL,
-                        `Username` varchar(255) NOT NULL,
-                        PRIMARY KEY (`id`),
-                        UNIQUE KEY `UKseh7nteifndaopocsq9f1w8ia` (`Username`)
-) ENGINE=InnoDB AUTO_INCREMENT=867 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
