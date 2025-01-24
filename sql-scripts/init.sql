@@ -37,15 +37,6 @@ CREATE TABLE `blacklist` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `blacklist`
---
-
-LOCK TABLES `blacklist` WRITE;
-/*!40000 ALTER TABLE `blacklist` DISABLE KEYS */;
-/*!40000 ALTER TABLE `blacklist` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `trainee`
 --
 
@@ -60,16 +51,6 @@ CREATE TABLE `trainee` (
                            CONSTRAINT `FK1b1rs0qdwriiqxlqflj5njnho` FOREIGN KEY (`id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `trainee`
---
-
-LOCK TABLES `trainee` WRITE;
-/*!40000 ALTER TABLE `trainee` DISABLE KEYS */;
-INSERT INTO `trainee` VALUES ('1990-05-15',865,'123 Main Street, Cityville');
-/*!40000 ALTER TABLE `trainee` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `trainee_trainer`
@@ -89,15 +70,6 @@ CREATE TABLE `trainee_trainer` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `trainee_trainer`
---
-
-LOCK TABLES `trainee_trainer` WRITE;
-/*!40000 ALTER TABLE `trainee_trainer` DISABLE KEYS */;
-/*!40000 ALTER TABLE `trainee_trainer` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `trainer`
 --
 
@@ -113,16 +85,6 @@ CREATE TABLE `trainer` (
                            CONSTRAINT `FKm4ck87wwdx2p9ttytj6drmhng` FOREIGN KEY (`id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `trainer`
---
-
-LOCK TABLES `trainer` WRITE;
-/*!40000 ALTER TABLE `trainer` DISABLE KEYS */;
-INSERT INTO `trainer` VALUES (1,866);
-/*!40000 ALTER TABLE `trainer` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `training`
@@ -150,16 +112,6 @@ CREATE TABLE `training` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `training`
---
-
-LOCK TABLES `training` WRITE;
-/*!40000 ALTER TABLE `training` DISABLE KEYS */;
-INSERT INTO `training` VALUES (865,866,'2024-12-18',60,1,201,'Yoga Class'),(865,866,'2024-12-18',60,1,202,'Yoga Class'),(865,866,'2024-12-18',60,1,203,'Yoga Class'),(865,866,'2024-12-18',60,1,204,'Yoga Class'),(865,866,'2024-12-18',60,1,205,'Yoga Class'),(865,866,'2024-12-18',60,1,206,'Yoga Class'),(865,866,'2024-12-18',60,1,207,'Yoga Class'),(865,866,'2024-12-18',60,1,208,'Yoga Class'),(865,866,'2024-12-18',60,1,209,'Yoga Class'),(865,866,'2024-12-18',60,1,210,'Yoga Class'),(865,866,'2024-12-18',60,1,211,'Yoga Class'),(865,866,'2024-12-18',60,1,212,'Yoga Class'),(865,866,'2024-12-18',60,1,213,'Yoga Class'),(865,866,'2024-12-18',60,1,214,'Yoga Class'),(865,866,'2024-12-18',60,1,215,'Yoga Class'),(865,866,'2024-12-18',60,1,216,'Yoga Class'),(865,866,'2024-12-18',60,1,217,'Yoga Class'),(865,866,'2024-12-18',60,1,218,'Yoga Class'),(865,866,'2024-12-18',60,1,219,'Yoga Class'),(865,866,'2024-12-18',60,1,220,'Yoga Class'),(865,866,'2024-12-18',60,1,221,'Yoga Class'),(865,866,'2024-12-18',60,1,222,'Yoga Class'),(865,866,'2024-12-18',60,1,223,'Yoga Class'),(865,866,'2024-12-18',60,1,224,'Yoga Class'),(865,866,'2024-12-18',60,1,225,'Yoga Class'),(865,866,'2024-12-18',60,1,226,'Yoga Class'),(865,866,'2024-12-18',60,1,227,'Yoga Class'),(865,866,'2024-12-18',60,1,228,'Yoga Class'),(865,866,'2024-12-18',60,1,229,'Yoga Class'),(865,866,'2024-12-18',60,1,230,'Yoga Class'),(865,866,'2024-12-18',60,1,231,'Yoga Class'),(865,866,'2024-12-18',60,1,232,'Yoga Class'),(865,866,'2024-12-18',60,1,233,'Yoga Class'),(865,866,'2024-12-18',60,1,234,'Yoga Class'),(865,866,'2024-12-18',60,1,235,'Yoga Class'),(865,866,'2024-12-18',60,1,236,'Yoga Class'),(865,866,'2024-12-18',60,1,237,'Yoga Class'),(865,866,'2024-12-18',60,1,238,'Yoga Class'),(865,866,'2024-12-18',60,1,239,'Yoga Class'),(865,866,'2024-12-18',60,1,240,'Yoga Class'),(865,866,'2024-12-18',60,1,241,'Yoga Class'),(865,866,'2024-12-18',60,1,242,'Yoga Class'),(865,866,'2024-12-18',60,1,243,'Yoga Class'),(865,866,'2024-12-18',60,1,244,'Yoga Class'),(865,866,'2024-12-18',60,1,245,'Yoga Class'),(865,866,'2024-12-18',60,1,246,'Yoga Class'),(865,866,'2024-12-18',60,1,247,'Yoga Class'),(865,866,'2024-12-18',60,1,248,'Yoga Class'),(865,866,'2024-12-18',60,1,249,'Yoga Class'),(865,866,'2024-12-18',60,1,250,'Yoga Class'),(865,866,'2024-12-18',60,1,251,'Yoga Class'),(865,866,'2024-12-18',60,1,252,'Yoga Class'),(865,866,'2024-12-18',60,1,253,'Yoga Class'),(865,866,'2024-12-18',60,1,254,'Yoga Class'),(865,866,'2025-11-18',60,1,255,'Yoga Class'),(865,866,'2025-10-18',60,1,256,'Yoga Class'),(865,866,'2024-11-18',60,1,257,'Yoga Class'),(865,866,'2024-11-18',60,1,258,'Yoga Class'),(865,866,'2024-12-18',60,1,259,'Yoga Class'),(865,866,'2025-10-18',60,1,260,'Yoga Class'),(865,866,'2025-11-18',60,1,261,'Yoga Class'),(865,866,'2025-10-18',60,1,262,'Yoga Class'),(865,866,'2024-10-18',60,1,263,'Yoga Class'),(865,866,'2024-10-18',60,1,264,'Yoga Class'),(865,866,'2024-11-18',60,1,265,'Yoga Class'),(865,866,'2025-11-18',60,1,266,'Yoga Class'),(865,866,'2025-11-18',60,1,267,'Yoga Class');
-/*!40000 ALTER TABLE `training` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `trainingtype`
 --
 
@@ -172,16 +124,6 @@ CREATE TABLE `trainingtype` (
                                 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `trainingtype`
---
-
-LOCK TABLES `trainingtype` WRITE;
-/*!40000 ALTER TABLE `trainingtype` DISABLE KEYS */;
-INSERT INTO `trainingtype` VALUES (1,'Yoga'),(2,'Pilates'),(3,'CrossFit'),(4,'Strength Training'),(5,'Cardio'),(6,'HIIT'),(7,'Aerobics'),(8,'Kickboxing'),(9,'Zumba'),(10,'Cycling');
-/*!40000 ALTER TABLE `trainingtype` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `user`
@@ -203,16 +145,6 @@ CREATE TABLE `user` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `user`
---
-
-LOCK TABLES `user` WRITE;
-/*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (_binary '',865,'Antony','Doe','$2a$10$e1WUJLiTvdM6BD4K5f8VUuXwrSSuNsl/jLJzyqL95.CswJbb5vX/i','Antony.Doe'),(_binary '',866,'Jane','Doe','$2a$10$h3KqlgbKVvWqQ.qhWMrSXelyhHgSxnwHCbRiQMPMFayl7EY90UOAq','Jane.Doe');
-/*!40000 ALTER TABLE `user` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `usertries`
 --
 
@@ -228,16 +160,6 @@ CREATE TABLE `usertries` (
                              UNIQUE KEY `id_UNIQUE` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `usertries`
---
-
-LOCK TABLES `usertries` WRITE;
-/*!40000 ALTER TABLE `usertries` DISABLE KEYS */;
-INSERT INTO `usertries` VALUES ('Antony.Doe',2,1733132309755,'2846-04-17');
-/*!40000 ALTER TABLE `usertries` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Dumping events for database 'gymsystemdatabase'
