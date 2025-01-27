@@ -14,7 +14,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "Trainer")
+@Table(name = "trainer")
 public class Trainer extends User {
     @ManyToOne
     @JoinColumn(name = "Specialization", referencedColumnName = "Id", nullable = false)

@@ -33,7 +33,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 @CucumberContextConfiguration
@@ -178,7 +181,7 @@ public class ControllersIntegrationStepDefinitions extends CucumberSpringConfigu
     public void trainerSWorkloadShouldDecrease() {
         Query query = new Query();
         query.addCriteria(Criteria.where("username").is("Jane.Smith"));
-        TrainerSummary summary = template.findOne(query, TrainerSummary.class);
+        TrainerSummary summary = await().atMost(5, TimeUnit.SECONDS).until(() -> template.findOne(query, TrainerSummary.class), Objects::nonNull);
         assertEquals(60, summary.getWorkloads().get(0).getList().get(0).getWorkingHours());
     }
 
@@ -205,7 +208,7 @@ public class ControllersIntegrationStepDefinitions extends CucumberSpringConfigu
     public void trainerSWorkloadShouldIncrease() {
         Query query = new Query();
         query.addCriteria(Criteria.where("username").is("Jane.Smith"));
-        TrainerSummary summary = template.findOne(query, TrainerSummary.class);
+        TrainerSummary summary = await().atMost(5, TimeUnit.SECONDS).until(() -> template.findOne(query, TrainerSummary.class), Objects::nonNull);
         assertEquals(60, summary.getWorkloads().get(0).getList().get(0).getWorkingHours());
     }
 
